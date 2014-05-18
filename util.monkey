@@ -19,7 +19,7 @@ Public
 
 ' Imports (Public):
 Import byteorder
-Import imagedemensions
+Import imagedimensions
 Import retrostrings
 Import stringutil
 
