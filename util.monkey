@@ -22,7 +22,11 @@ Import byteorder
 Import imagedemensions
 Import retrostrings
 Import stringutil
-Import console
+
+#If CONSOLE_IMPLEMENTED
+	Import console
+#End
+
 Import sizeof
 Import time
 
@@ -57,7 +61,9 @@ Const ErrorTemplate:String = "[ERROR] {Debug}: "
 Const LogTemplate:String = "[Info] {Debug}: "
 
 ' Global variable(s) (Public):
-Global DebugConsole:Console = Null
+#If CONSOLE_IMPLEMENTED
+	Global DebugConsole:Console = Null
+#End
 
 ' Global variable(s) (Private):
 Private
@@ -158,14 +164,16 @@ Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int)
 	Return B
 End
 
-Function DebugBind:Bool(C:Console)
-	If (C = Null) Then Return False
-	
-	DebugConsole = C
-	
-	' Return the default response.
-	Return True
-End
+#If CONSOLE_IMPLEMENTED
+	Function DebugBind:Bool(C:Console)
+		If (C = Null) Then Return False
+		
+		DebugConsole = C
+		
+		' Return the default response.
+		Return True
+	End
+#End
 
 Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 	#If DEBUG_PRINT
@@ -184,11 +192,17 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 			Msg = TempMsg + Msg
 		#End
 		
+		#If CONSOLE_IMPLEMENTED
 		If (DebugConsole <> Null) Then
 			DebugConsole.WriteLine(Msg, True)
 		Else
-			Print(Msg)
+		#End
+		
+		Print(Msg)
+		
+		#If CONSOLE_IMPLEMENTED
 		Endif
+		#End
 	#Else
 		' This may change later:
 		If (StopExecution) Then
@@ -207,11 +221,17 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 			#If DEBUG_PRINT
 				Local FinalStr:String = (ErrorTemplate + Quote + "Attempt to stop execution failed. (Reason: Release-mode)" + Quote)
 				
+				#If CONSOLE_IMPLEMENTED
 				If (DebugConsole <> Null) Then
 					DebugConsole.WriteLine(FinalStr, True)
 				Else
-					Print(FinalStr)
+				#End
+				
+				Print(FinalStr)
+				
+				#If CONSOLE_IMPLEMENTED
 				Endif
+				#End
 			#Else
 				Error(Msg)
 			#End
