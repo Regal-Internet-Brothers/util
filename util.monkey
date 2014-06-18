@@ -22,6 +22,7 @@ Import byteorder
 Import imagedimensions
 Import retrostrings
 Import stringutil
+Import vector
 
 #If CONSOLE_IMPLEMENTED
 	Import console
@@ -57,8 +58,8 @@ Public
 ' You should stick to 'Null' in most cases; try not to use this.
 Const NOVAR:Int = -999999
 
-Const ErrorTemplate:String = "[ERROR] {Debug}: "
-Const LogTemplate:String = "[Info] {Debug}: "
+Const ErrorTemplate:String = "[ERROR] {Debug}: " ' + Space
+Const LogTemplate:String = "[Info] {Debug}: " ' + Space
 
 ' Global variable(s) (Public):
 #If CONSOLE_IMPLEMENTED
@@ -107,6 +108,8 @@ Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:Int)
 		' Read from the input-stream, then write to the output-stream:
 		InputStream.Read(Data, 0, DataLength)
 		OutputStream.Write(Data, 0, DataLength)
+		
+		Data.Discard()
 	#Else
 		'Local Data:Int[DataSize]
 		
@@ -153,12 +156,18 @@ Function WrapColor:Float(C:Float)
 	Return C Mod 256.0
 End
 
-Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int)
+Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False)
 	' Allocate a new data-buffer.
 	Local B:= New DataBuffer(Size)
 
-	' Copy the buffer's bytes over to 'B'.	
-	Buffer.CopyBytes(0, B, 0, Min(Size, Buffer.Length()))
+	' Copy the buffer's bytes over to 'B'.
+	If (CopyData) Then
+		Buffer.CopyBytes(0, B, 0, Buffer.Length())
+	Endif
+	
+	If (DiscardOldBuffer) Then
+		Buffer.Discard()
+	Endif
 	
 	' Return the new buffer ('B').
 	Return B
@@ -193,15 +202,15 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 		#End
 		
 		#If CONSOLE_IMPLEMENTED
-		If (DebugConsole <> Null) Then
-			DebugConsole.WriteLine(Msg, True)
-		Else
+			If (DebugConsole <> Null) Then
+				DebugConsole.WriteLine(Msg, True)
+			Else
 		#End
 		
 		Print(Msg)
 		
 		#If CONSOLE_IMPLEMENTED
-		Endif
+			Endif
 		#End
 	#Else
 		' This may change later:
@@ -222,15 +231,15 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 				Local FinalStr:String = (ErrorTemplate + Quote + "Attempt to stop execution failed. (Reason: Release-mode)" + Quote)
 				
 				#If CONSOLE_IMPLEMENTED
-				If (DebugConsole <> Null) Then
-					DebugConsole.WriteLine(FinalStr, True)
-				Else
+					If (DebugConsole <> Null) Then
+						DebugConsole.WriteLine(FinalStr, True)
+					Else
 				#End
 				
 				Print(FinalStr)
 				
 				#If CONSOLE_IMPLEMENTED
-				Endif
+					Endif
 				#End
 			#Else
 				Error(Msg)
