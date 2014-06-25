@@ -35,6 +35,8 @@ Import time
 	Import mojoemulator
 #End
 
+Import publicdatastream
+
 ' Imports (Private):
 Private
 
@@ -154,23 +156,6 @@ Function WrapColor:Float(C:Float)
 	#End
 	
 	Return C Mod 256.0
-End
-
-Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False)
-	' Allocate a new data-buffer.
-	Local B:= New DataBuffer(Size)
-
-	' Copy the buffer's bytes over to 'B'.
-	If (CopyData) Then
-		Buffer.CopyBytes(0, B, 0, Buffer.Length())
-	Endif
-	
-	If (DiscardOldBuffer) Then
-		Buffer.Discard()
-	Endif
-	
-	' Return the new buffer ('B').
-	Return B
 End
 
 #If CONSOLE_IMPLEMENTED
