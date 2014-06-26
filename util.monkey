@@ -273,21 +273,30 @@ Class GenericUtilities<T>
 		Return Response
 	End
 	
-	Function CopyArray:T[](Source:T[], Destination:T[])
+	Function CopyArray:T[](Source:T[], Destination:T[]=[], SourceOffset:Int=0, DestinationOffset:Int=0)
+		If (Destination.Length() = 0) Then
+			Destination = New T[Source.Length()]
+		Endif
+		
 		Local MinLength:Int = Min(Source.Length(), Destination.Length())
 		
 		For Local Index:Int = 0 Until MinLength
-			Destination[Index] = Source[Index]
+			' Local variable(s):
+			Local DestinationIndex:= Index+DestinationOffset
+			Local SourceIndex:= Index+SourceOffset
+			
+			' Check if we can perform the current operation:
+			If (DestinationIndex >= Destination.Length() Or SourceIndex >= Source.Length()) Then
+				Exit
+			Endif
+			
+			Destination[DestinationIndex] = Source[SourceIndex]
 		Next
 		
 		Return Destination
 	End
 	
 	Function CloneArray:T[](Source:T[], Destination:T[]=[])
-		If (Destination.Length() = 0) Then
-			Destination = New T[Source.Length()]
-		Endif
-		
 		Return CopyArray(Source, Destination)
 	End
 	
