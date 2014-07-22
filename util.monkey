@@ -35,8 +35,6 @@ Import time
 	Import mojoemulator
 #End
 
-Import publicdatastream
-
 ' Imports (Private):
 Private
 
@@ -67,6 +65,10 @@ Const LogTemplate:String = "[Info] {Debug}: " ' + Space
 #If CONSOLE_IMPLEMENTED
 	Global DebugConsole:Console = Null
 #End
+
+' A global stack logging randomization seeds.
+' This is commonly accessed by the 'PushSeed' and 'PopSeed' functions.
+Global SeedStack:Stack<Int> = Null
 
 ' Global variable(s) (Private):
 Private
@@ -158,6 +160,56 @@ Function WrapColor:Float(C:Float)
 	Return C Mod 256.0
 End
 
+' This is just a wrapper for the main implementation:
+Function PushSeed:Bool()
+	Return PushSeed(Seed)
+End
+
+' The return value of this function specifies if the seed-stack already existed.
+Function PushSeed:Bool(Seed:Int)
+	' Local variable(s):
+	Local Response:Bool = (SeedStack <> Null)
+	
+	If (Not Response) Then
+		SeedStack = New IntStack()
+	Endif
+	
+	SeedStack.Push(Seed)
+	
+	' Return the calculated response.
+	Return Response
+End
+
+' This command retrieves a seed from the seed-stack,
+' if no seed exists, the current randomization seed is returned.
+Function PopSeed:Int()
+	If (SeedStack <> Null) Then
+		If (Not SeedStack.IsEmpty()) Then
+			Return SeedStack.Pop()
+		Endif
+	Endif
+	
+	' Return the default response.
+	Return Seed
+End
+
+Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False)
+	' Allocate a new data-buffer.
+	Local B:= New DataBuffer(Size)
+
+	' Copy the buffer's bytes over to 'B'.
+	If (CopyData) Then
+		Buffer.CopyBytes(0, B, 0, Buffer.Length())
+	Endif
+	
+	If (DiscardOldBuffer) Then
+		Buffer.Discard()
+	Endif
+	
+	' Return the new buffer ('B').
+	Return B
+End
+
 #If CONSOLE_IMPLEMENTED
 	Function DebugBind:Bool(C:Console)
 		If (C = Null) Then Return False
@@ -168,6 +220,16 @@ End
 		Return True
 	End
 #End
+
+Function DebugError:Void(E:Throwable, StopExecution:Bool=True)
+	#If CONFIG = "debug"
+		DebugStop()
+	#Else
+		DebugPrint("Unknown exception has been thrown; continuing anyway.")
+	#End
+	
+	Return
+End
 
 Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 	#If DEBUG_PRINT
@@ -249,13 +311,74 @@ End
 
 ' Classes:
 Class GenericUtilities<T>
+	' Constant variable(s):
+	
+	' Comparison response codes (Positive numbers are for error-reporting):
+	Const COMPARE_RESPONSE_IDENTICAL:Int			= -1
+	Const COMPARE_RESPONSE_WRONG_LENGTH:Int			= -2
+	
+	' Other:
+	Const AUTO:Int = -1
+	
 	' Global variable(s):
+	
+	' For internal and extern use. That being said, please do not modify this value.
 	Global NIL:T
 	
 	' Functions:
+	Function AsString:String(Input:Bool)
+		Return BoolToString(Input)
+	End
+	
+	Function AsString:String(S:Stream, Length:Int=AUTO, Encoding:String="utf8")
+		If (Length = AUTO) Then
+			Length = S.Length()
+		Endif
+		
+		Return S.ReadString(Length, Encoding)
+	End
+	
+	Function AsString:String(Input:T[], Offset:Int=0, Length:Int=AUTO, AddSpaces:Bool=True)
+		' Local variable(s):
+		Local Output:String = LeftBracket
+		
+		' If no length was specified, use the array's length.
+		If (Length = AUTO) Then
+			Length = Input.Length()
+		Endif
+		
+		Local VirtualLength:= Length+Offset
+		
+		For Local Index:Int = Offset Until VirtualLength
+			Output += Input[Index]
+			
+			If (Index+1 < VirtualLength) Then
+				Output += Comma
+				
+				If (AddSpaces) Then
+					Output += Space
+				Endif
+			Endif
+		Next
+		
+		Return Output + RightBracket
+	End
+	
+	Function CopyStringToArray:T[](S:String, Input:T[], Offset:Int=0, Length:Int=AUTO)
+		If (Length = AUTO) Then
+			Length = Min(S.Length(), Input.Length())
+		Endif
+		
+		For Local I:Int = Offset Until Length
+			Input[I] = S[I]
+		Next
+		
+		' Just for the sake of convenience, return the 'Input' array.
+		Return Input
+	End
+	
 	Function IndexOfList:T(L:List<T>, Index:Int=0)
 		' Local variable(s):
-		Local Response:T
 		Local Data:list.Node<T> = L.FirstNode()
 				
 		For Local I:= 0 Until Index
@@ -263,49 +386,87 @@ Class GenericUtilities<T>
 			
 			' Not my favorite method, but it works:
 			If (Data = Null) Then
-				Return Response
+				Return NIL
 			Endif
 		Next
 		
-		Response = Data.Value()
-		
 		' Return the value of the assessed node.
-		Return Response
+		Return Data.Value()
 	End
 	
-	Function CopyArray:T[](Source:T[], Destination:T[]=[], SourceOffset:Int=0, DestinationOffset:Int=0)
-		If (Destination.Length() = 0) Then
-			Destination = New T[Source.Length()]
-		Endif
+	Function Zero:T[](Input:T[])
+		Return Nil(Input)
+	End
+	
+	Function Nil:T[](Input:T[])
+		For Local Index:= 0 Until Input.Length()
+			Input[Index] = NIL
+		Next
 		
+		Return Input
+	End
+	
+	Function PrintArray:Void(Input:T[])
+		Print(AsString(Input))
+		
+		Return
+	End
+	
+	Function CopyArray:T[](Source:T[], Destination:T[])
 		Local MinLength:Int = Min(Source.Length(), Destination.Length())
 		
 		For Local Index:Int = 0 Until MinLength
-			' Local variable(s):
-			Local DestinationIndex:= Index+DestinationOffset
-			Local SourceIndex:= Index+SourceOffset
-			
-			' Check if we can perform the current operation:
-			If (DestinationIndex >= Destination.Length() Or SourceIndex >= Source.Length()) Then
-				Exit
-			Endif
-			
-			Destination[DestinationIndex] = Source[SourceIndex]
+			Destination[Index] = Source[Index]
 		Next
 		
 		Return Destination
 	End
 	
 	Function CloneArray:T[](Source:T[], Destination:T[]=[])
+		If (Destination.Length() = 0) Then
+			Destination = New T[Source.Length()]
+		Endif
+		
 		Return CopyArray(Source, Destination)
+	End
+	
+	' This command returns a positive number upon an error,
+	' otherwise a 'response code' will be given (See the "Contant variable(s)" section for details).
+	Function Compare:Int(A1:T[], A2:T[], CheckLength:Bool=True)
+		' Local variable(s):
+		Local A1_Length:= A1.Length
+		Local A2_Length:= A2.Length
+		
+		' Check for errors:
+		If (CheckLength) Then
+			' Make sure they're both the same length.
+			If (A1_Length <> A2_Length) Then
+				Return COMPARE_RESPONSE_WRONG_LENGTH
+			Endif
+		Endif
+		
+		For Local I:= 0 Until Min(A1_Length, A2_Length)
+			If (A1[I] <> A2[I]) Then
+				' Not the best of escape methods, but it works.
+				Return I
+			Endif
+		Next
+		
+		' Return the default response.
+		Return COMPARE_RESPONSE_IDENTICAL
+	End
+	
+	' This function returns positive if both arrays are identical.
+	Function SimpleCompare:Bool(A1:T[], A2:T[], CheckLength:Bool=True)
+		Return (Compare(A1, A2, CheckLength) = COMPARE_RESPONSE_IDENTICAL)
 	End
 	
 	Function Read:T(S:Stream)
 		Return Read(S, NIL)
 	End
 		
-	Function Read:T[](S:Stream, DataArray:T[], Size:Int=-1)
-		If (Size = -1) Then Size = S.ReadInt()
+	Function Read:T[](S:Stream, DataArray:T[], Size:Int=AUTO)
+		If (Size = AUTO) Then Size = S.ReadInt()
 		
 		If (Size > 0) Then
 			If (DataArray.Length() = 0) Then
@@ -399,8 +560,8 @@ Class GenericUtilities<T>
 		Return
 	End
 	
-	Function Read:String(S:Stream, Data:String, Encoding:String="utf8", Size:Int=-1)
-		If (Size = -1) Then Size = S.ReadInt()
+	Function Read:String(S:Stream, Data:String, Encoding:String="utf8", Size:Int=AUTO)
+		If (Size = AUTO) Then Size = S.ReadInt()
 		
 		Data = S.ReadString(Size, Encoding)
 		
