@@ -17,7 +17,17 @@ Public
 
 #DEBUG_PRINT_QUOTES = False
 
+#READ_LINE_QUICKLY = True
+
+#If HOST = "winnt"
+	#WRITE_LINE_ENDTYPE = "CRLF"
+#Else
+	#WRITE_LINE_ENDTYPE = "LF"
+#End
+
 ' Imports (Public):
+Import autostream
+
 Import byteorder
 Import imagedimensions
 Import retrostrings
@@ -45,14 +55,13 @@ Import brl.databuffer
 Import brl.stream
 Import brl.filepath
 
-' Unofficial:
-
-' ImmutableOctet:
-Import autostream
-
 Public
 
 ' Constant variable(s):
+
+' Ascii codes:
+Const ASCII_CARRIAGE_RETURN:Int = 13
+Const ASCII_LINE_FEED:Int = 10
 
 ' Used mainly for external code where '-9999...' isn't ever going to be valid.
 ' You should stick to 'Null' in most cases; try not to use this.
@@ -160,6 +169,34 @@ Function WrapColor:Float(C:Float)
 	Return C Mod 256.0
 End
 
+' This command is a helper function for 
+Function ProcessColorLocation:Int(Point:Int)
+	' Check for errors:
+	If (Point < 0) Then
+		Return 0
+	Endif
+	
+	Return (SizeOf_Integer_InBits-(SizeOf_Octet_InBits*(Point+1))) ' ((SizeOf_Integer_InBits-SizeOf_Octet_InBits)-(SizeOf_Octet_InBits*Point))
+End
+
+' NOTE: This command will produce incorrect color values without all characters present in the encode-string.
+Function ColorToString:String(Pixel:Int, Encoding:String="ARGB")
+	' Ensure the encoding is always described as uppercase.
+	Encoding = Encoding.ToUpper()
+	
+	' Return the encoded color-string.
+	Return ("R: " + ((Pixel Shr ProcessColorLocation(Encoding.Find("R"))) & $000000FF) +
+			", G: " + ((Pixel Shr ProcessColorLocation(Encoding.Find("G"))) & $000000FF) +
+			", B: " + ((Pixel Shr ProcessColorLocation(Encoding.Find("B"))) & $000000FF) +
+			", A: " + ((Pixel Shr ProcessColorLocation(Encoding.Find("A"))) & $000000FF))
+End
+
+Function PrintColor:Void(Pixel:Int, Encoding:String="ARGB")
+	Print(ColorToString(Pixel, Encoding))
+	
+	Return
+End
+
 ' This is just a wrapper for the main implementation:
 Function PushSeed:Bool()
 	Return PushSeed(Seed)
@@ -191,6 +228,73 @@ Function PopSeed:Int()
 	
 	' Return the default response.
 	Return Seed
+End
+
+' This command writes a standard line to a 'Stream'.
+' This supports both 'LF', and 'CRLF' line endings currently, and this can be configured with 'WRITE_LINE_ENDTYPE'.
+' Though character encoding is supported with this, only ASCII is supported for 'ReadLine'.
+Function WriteLine:Bool(S:Stream, Line:String, CharacterEncoding:String="ascii")
+	' Check for errors:
+	If (S = Null) Then
+		Return False
+	Endif
+	
+	S.WriteString(Line, CharacterEncoding)
+	
+	#If WRITE_LINE_ENDTYPE = "CRLF"
+		S.WriteByte(ASCII_CARRIAGE_RETURN)
+	#End
+	
+	S.WriteByte(ASCII_LINE_FEED)
+	
+	' Return the default response.
+	Return True
+End
+
+' This command reads a standard line from a 'Stream'. (This supports both 'LF', and 'CRLF' line endings currently)
+' In addition, only 'ASCII' is supported currently.
+Function ReadLine:String(S:Stream)
+	' Local variable(s):
+	Local Position:= S.Position()
+	Local Padding:Int = 0
+	Local Str:String
+	
+	#If Not READ_LINE_QUICKLY
+		Local Size:Int = 0
+	#End
+	
+	While (Not S.Eof())
+		Local Char:= S.ReadByte()
+		
+		If (Char <> ASCII_LINE_FEED) Then
+			If (Char <> ASCII_CARRIAGE_RETURN) Then
+				#If READ_LINE_QUICKLY
+					Str += String.FromChar(Char)
+				#Else
+					Size += 1
+				#End
+			Else
+				Padding = 2
+			Endif
+		Else
+			If (Padding = 0) Then
+				Padding = 1
+			Endif
+			
+			Exit
+		Endif
+	Wend
+	
+	#If Not READ_LINE_QUICKLY
+		S.Seek(Position)
+		
+		Str = S.ReadString(Size, "ascii")
+		
+		S.Seek(S.Position()+Padding)
+	#End
+	
+	' Return the string we read from the stream.
+	Return Str
 End
 
 Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False)
