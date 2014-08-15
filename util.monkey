@@ -521,13 +521,15 @@ Class GenericUtilities<T>
 	End
 	
 	Function CopyArray:T[](Source:T[], Destination:T[])
-		Local MinLength:Int = Min(Source.Length(), Destination.Length())
-		
-		For Local Index:Int = 0 Until MinLength
+		For Local Index:Int = 0 Until Min(Source.Length(), Destination.Length())
 			Destination[Index] = Source[Index]
 		Next
 		
 		Return Destination
+	End
+	
+	Function CopyArray:T[](Source:T[])
+		Return CloneArray(Source)
 	End
 	
 	Function CloneArray:T[](Source:T[])
