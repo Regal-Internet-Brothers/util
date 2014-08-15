@@ -232,7 +232,7 @@ End
 
 ' This command writes a standard line to a 'Stream'.
 ' This supports both 'LF', and 'CRLF' line endings currently, and this can be configured with 'WRITE_LINE_ENDTYPE'.
-' Though character encoding is supported with this, only ASCII is supported for 'ReadLine'.
+' Though character encoding is supported with this, only ASCII is supported by 'ReadLine'.
 Function WriteLine:Bool(S:Stream, Line:String, CharacterEncoding:String="ascii")
 	' Check for errors:
 	If (S = Null) Then
@@ -252,11 +252,11 @@ Function WriteLine:Bool(S:Stream, Line:String, CharacterEncoding:String="ascii")
 End
 
 ' This command reads a standard line from a 'Stream'. (This supports both 'LF', and 'CRLF' line endings currently)
-' In addition, only 'ASCII' is supported currently.
+' In addition, only 'ASCII' is currently supported.
 Function ReadLine:String(S:Stream)
 	' Local variable(s):
 	Local Position:= S.Position()
-	Local Padding:Int = 0
+	Local Padding:Int = 0 ' * SizeOf_Char
 	Local Str:String
 	
 	#If Not READ_LINE_QUICKLY
@@ -274,12 +274,16 @@ Function ReadLine:String(S:Stream)
 					Size += 1
 				#End
 			Else
-				Padding = 2
+				Padding = 2*SizeOf_Char
 			Endif
 		Else
-			If (Padding = 0) Then
-				Padding = 1
-			Endif
+			#Rem
+				If (Padding = 0) Then
+					Padding = 1
+				Endif
+			#End
+			
+			Padding = Max(Padding, 1*SizeOf_Char)
 			
 			Exit
 		Endif
@@ -526,12 +530,8 @@ Class GenericUtilities<T>
 		Return Destination
 	End
 	
-	Function CloneArray:T[](Source:T[], Destination:T[]=[])
-		If (Destination.Length() = 0) Then
-			Destination = New T[Source.Length()]
-		Endif
-		
-		Return CopyArray(Source, Destination)
+	Function CloneArray:T[](Source:T[])
+		Return CopyArray(Source, New T[Source.Length()])
 	End
 	
 	' This command returns a positive number upon an error,
