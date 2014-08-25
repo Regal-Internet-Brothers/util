@@ -15,6 +15,12 @@ Public
 	#DEBUG_PRINT = False
 #End
 
+#If CONFIG = "release"
+	#DEBUG_PRINT_ON_ERROR = True
+#Else
+	#DEBUG_PRINT_ON_ERROR = False
+#End
+
 #DEBUG_PRINT_QUOTES = False
 
 #READ_LINE_QUICKLY = True
@@ -376,7 +382,7 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 
 	If (StopExecution) Then
 		#If CONFIG = "debug"
-			#If DEBUG_PRINT
+			#If DEBUG_PRINT_ON_ERROR
 				DebugStop()
 			#Else
 				Error(Msg)
