@@ -307,7 +307,13 @@ Function ReadLine:String(S:Stream)
 	Return Str
 End
 
-Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False)
+Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)
+	If (OnlyWhenDifferentSizes) Then
+		If (Buffer.Length() = Size) Then
+			Return Buffer
+		Endif
+	Endif
+	
 	' Allocate a new data-buffer.
 	Local B:= New DataBuffer(Size)
 
