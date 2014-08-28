@@ -73,6 +73,9 @@ Const ASCII_LINE_FEED:Int = 10
 ' You should stick to 'Null' in most cases; try not to use this.
 Const NOVAR:Int = -999999
 
+' This is for situations where the length of something can be optional.
+Const AUTOMATIC_LENGTH:Int = -1
+
 Const ErrorTemplate:String = "[ERROR] {Debug}: " ' + Space
 Const LogTemplate:String = "[Info] {Debug}: " ' + Space
 
@@ -307,26 +310,36 @@ Function ReadLine:String(S:Stream)
 	Return Str
 End
 
-Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)
-	If (OnlyWhenDifferentSizes) Then
-		If (Buffer.Length() = Size) Then
+Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int=AUTOMATIC_LENGTH, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)
+	Local BufferAvailable:Bool = (Buffer <> Null)
+	
+	If (BufferAvailable And OnlyWhenDifferentSizes) Then
+		If (Size <> AUTO And Buffer.Length() = Size) Then
 			Return Buffer
 		Endif
 	Endif
 	
+	If (Size = AUTOMATIC_LENGTH) Then
+		Size = Buffer.Length()
+	Endif
+	
 	' Allocate a new data-buffer.
 	Local B:= New DataBuffer(Size)
-
+	
 	' Copy the buffer's bytes over to 'B'.
-	If (CopyData) Then
-		Buffer.CopyBytes(0, B, 0, Buffer.Length())
+	If (BufferAvailable) Then
+		If (CopyData) Then
+			' Copy the contents of 'Buffer' to the newly generated buffer-object.
+			Buffer.CopyBytes(0, B, 0, Buffer.Length())
+		Endif
+		
+		If (DiscardOldBuffer) Then
+			' Discard the old buffer.
+			Buffer.Discard()
+		Endif
 	Endif
 	
-	If (DiscardOldBuffer) Then
-		Buffer.Discard()
-	Endif
-	
-	' Return the new buffer ('B').
+	' Return the newly generated buffer.
 	Return B
 End
 
