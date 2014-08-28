@@ -314,7 +314,7 @@ Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int=AUTOMATIC_LENGTH, C
 	Local BufferAvailable:Bool = (Buffer <> Null)
 	
 	If (BufferAvailable And OnlyWhenDifferentSizes) Then
-		If (Size <> AUTO And Buffer.Length() = Size) Then
+		If (Size <> AUTOMATIC_LENGTH And Buffer.Length() = Size) Then
 			Return Buffer
 		Endif
 	Endif
