@@ -9,6 +9,8 @@ Public
 #End
 #End
 
+#UTIL_IMPLEMENTED = True
+
 #If CONFIG = "debug"
 	#DEBUG_PRINT = True
 #Else
