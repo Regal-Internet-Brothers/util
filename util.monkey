@@ -595,7 +595,7 @@ Class GenericUtilities<T>
 		
 		Local Destination_Area:Int = (Destination_Length-Destination_Offset)
 		
-		' For the sake of safety, also we'll also check the destination area:
+		' For the sake of safety, we'll also check the destination area:
 		If (Destination_Area <= 0) Then
 			' The destination-area is too small for use, return an empty array.
 			Return []
