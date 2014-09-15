@@ -547,11 +547,84 @@ Class GenericUtilities<T>
 		Return
 	End
 	
-	Function CopyArray:T[](Source:T[], Destination:T[])
-		For Local Index:Int = 0 Until Min(Source.Length(), Destination.Length())
-			Destination[Index] = Source[Index]
+	#Rem
+		NOTES:
+			* In the event of an error, an empty array will be produced.
+			
+			* The 'CopyArray' command's 'FitSource' argument should only be enabled with the
+			knowledge that the original destination may have been discarded.
+			
+			Your code must reflect this by disregarding the original array,
+			and simply assigning the old array to the retrun value.
+			
+			EXAMPLE:
+				' Local variable(s):
+				Local A:T[10], A2:T[3]
+				
+				' This will likely produce a new 'T' array, based on the area-delta.
+				A2 = CopyArray(A, A2, True)
+	#End
+	
+	Function CopyArray:T[](Source:T[], Destination:T[], FitSource:Bool)
+		Return CopyArray(Source, Destination, 0, 0, AUTO, AUTO, FitSource)
+	End
+	
+	Function CopyArray:T[](Source:T[], Destination:T[], Source_Offset:Int=0, Destination_Offset:Int=0, Source_Length:Int=AUTO, Destination_Length:Int=AUTO, FitSource:Bool=False)
+		If (Source_Length = AUTO) Then
+			Source_Length = Source.Length()
+		Endif
+		
+		If (Destination_Length = AUTO) Then
+			Destination_Length = Destination.Length()
+		Endif
+		
+		' Local variable(s):
+		
+		' These two are used as caches for the real lengths of the arrays:
+		Local Destination_RealLength:= Destination.Length()
+		Local Source_RealLength:= Source.Length()
+		
+		' Calculate the source and destination areas:
+		Local Source_Area:Int = (Source_Length-Source_Offset)
+		
+		' Make sure we have a source to work with:
+		If (Source_Area <= 0) Then
+			' The source-area is too small for use, return an empty array.
+			Return []
+		Endif
+		
+		Local Destination_Area:Int = (Destination_Length-Destination_Offset)
+		
+		' For the sake of safety, also we'll also check the destination area:
+		If (Destination_Area <= 0) Then
+			' The destination-area is too small for use, return an empty array.
+			Return []
+		Endif
+		
+		Local Operation_Area:Int
+		
+		If (FitSource And Destination_Area < Source_Area) Then
+			Local AreaDelta:Int = (Source_Area-Destination_Area)
+			Local NewArea:Int = (Destination_RealLength+AreaDelta)
+			
+			If (NewArea > Destination_RealLength) Then
+				Destination = Destination.Resize(NewArea)
+			Else
+				Destination = Destination.Resize(Destination_Length+AreaDelta)
+			Endif
+			
+			Destination_Area = Source_Area
+			Operation_Area = Destination_Area
+		Else
+			Operation_Area = Min(Source_Area, Destination_Area)
+		Endif
+		
+		' Copy the contents of the source-array into the destination-array:
+		For Local Index:= 0 Until Operation_Area
+			Destination[Index+Destination_Offset] = Source[Index+Source_Offset]
 		Next
 		
+		' Return the destination-array.
 		Return Destination
 	End
 	
