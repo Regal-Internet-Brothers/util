@@ -11,6 +11,12 @@ Public
 
 #UTIL_IMPLEMENTED = True
 
+#If IOELEMENT_IMPLEMENTED
+	#UTIL_SUPPORT_IOELEMENTS = True
+#Else
+	#UTIL_SUPPORT_IOELEMENTS = False
+#End
+
 #If CONFIG = "debug"
 	#DEBUG_PRINT = True
 #Else
@@ -56,6 +62,11 @@ Import time
 ' Imports (Private):
 Private
 
+' Unofficial:
+#If UTIL_SUPPORT_IOELEMENTS
+	Import ioelement
+#End
+
 ' Official:
 
 ' BRL:
@@ -66,6 +77,13 @@ Import brl.filepath
 Public
 
 ' Constant variable(s):
+
+' Type codes (Mainly used for generic classes):
+Const TYPE_OBJECT:Int			= 0
+Const TYPE_INT:Int				= 1
+Const TYPE_BOOL:Int				= 2
+Const TYPE_FLOAT:Int			= 3
+Const TYPE_STRING:Int			= 4
 
 ' Ascii codes:
 Const ASCII_CARRIAGE_RETURN:Int = 13
@@ -444,6 +462,47 @@ Function DebugPrint:Void(Str:String, StopExecution:Bool=False)
 	Return
 End
 
+' The following functions are designed to be used with generic classes:
+Function IsObject:Bool(O:Object)
+	Return True
+End
+
+Function IsObject:Bool(I:Int)
+	Return False
+End
+
+Function IsObject:Bool(B:Bool)
+	Return False
+End
+
+Function IsObject:Bool(F:Float)
+	Return False
+End
+
+Function IsObject:Bool(S:String)
+	Return False
+End
+
+Function TypeOf:Int(O:Object)
+	Return TYPE_OBJECT
+End
+
+Function TypeOf:Int(I:Int)
+	Return TYPE_INT
+End
+
+Function TypeOf:Int(B:Bool)
+	Return TYPE_BOOL
+End
+
+Function TypeOf:Int(F:Float)
+	Return TYPE_FLOAT
+End
+
+Function TypeOf:Int(S:String)
+	Return TYPE_STRING
+End
+
 ' Classes:
 Class GenericUtilities<T>
 	' Constant variable(s):
@@ -461,10 +520,24 @@ Class GenericUtilities<T>
 	Global NIL:T
 	
 	' Functions:
+	
+	' This command gives the user the type-code of 'T'.
+	Function Type:Int()
+		' Return the type code of 'NIL'.
+		Return TypeOf(NIL)
+	End
+	
+	' This command specifies if 'T' is an object.
+	Function IsObject:Bool()
+		Return util.IsObject(NIL)
+	End
+	
+	' This command wraps the standard 'BoolToString' conversion command.
 	Function AsString:String(Input:Bool)
 		Return BoolToString(Input)
 	End
 	
+	' This command reads a string from a standard 'Stream' object.
 	Function AsString:String(S:Stream, Length:Int=AUTO, Encoding:String="utf8")
 		If (Length = AUTO) Then
 			Length = S.Length()
@@ -565,7 +638,7 @@ Class GenericUtilities<T>
 				A2 = CopyArray(A, A2, True)
 	#End
 	
-	Function CopyArray:T[](Source:T[], Destination:T[], FitSource:Bool)
+	Function CopyArray:T[](Source:T[], Destination:T[], FitSource:Bool=False)
 		Return CopyArray(Source, Destination, 0, 0, AUTO, AUTO, FitSource)
 	End
 	
@@ -767,7 +840,9 @@ Class GenericUtilities<T>
 	End
 	
 	Function Read:String(S:Stream, Data:String, Encoding:String="utf8", Size:Int=AUTO)
-		If (Size = AUTO) Then Size = S.ReadInt()
+		If (Size = AUTO) Then
+			Size = S.ReadInt()
+		Endif
 		
 		Data = S.ReadString(Size, Encoding)
 		
@@ -776,9 +851,39 @@ Class GenericUtilities<T>
 	End
 	
 	Function Write:Void(S:Stream, Data:String, Encoding:String="utf8", WriteSize:Bool=True)
-		If (WriteSize) Then S.WriteInt(Data.Length())
+		If (WriteSize) Then
+			S.WriteInt(Data.Length())
+		Endif
+		
 		S.WriteString(Data, Encoding)
 		
 		Return
+	End
+	
+	#If UTIL_SUPPORT_IOELEMENTS
+		Function Read:Void(S:Stream, Data:InputChildElement)
+			If (Data = Null) Then
+				Return
+			Endif
+			
+			Data.Load(S)
+			
+			Return
+		End
+		
+		Function Write:Void(S:Stream, Data:OutputChildElement)
+			If (Data = Null) Then
+				Return
+			Endif
+			
+			Data.Save(S)
+		End
+	#End
+	
+	' Constructor(s):
+	
+	' DO NOT CREATE NEW INSTANCES OF THIS CLASS.
+	Method New()
+		DebugError("This class should not be used in this was.")
 	End
 End
