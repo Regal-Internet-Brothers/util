@@ -463,23 +463,23 @@ Function DebugPrint:Void(Str:String, StopExecution:Bool=False)
 End
 
 ' The following functions are designed to be used with generic classes:
-Function IsObject:Bool(O:Object)
+Function TypeIsObject:Bool(O:Object)
 	Return True
 End
 
-Function IsObject:Bool(I:Int)
+Function TypeIsObject:Bool(I:Int)
 	Return False
 End
 
-Function IsObject:Bool(B:Bool)
+Function TypeIsObject:Bool(B:Bool)
 	Return False
 End
 
-Function IsObject:Bool(F:Float)
+Function TypeIsObject:Bool(F:Float)
 	Return False
 End
 
-Function IsObject:Bool(S:String)
+Function TypeIsObject:Bool(S:String)
 	Return False
 End
 
@@ -529,7 +529,7 @@ Class GenericUtilities<T>
 	
 	' This command specifies if 'T' is an object.
 	Function IsObject:Bool()
-		Return util.IsObject(NIL)
+		Return TypeIsObject(NIL)
 	End
 	
 	' This command wraps the standard 'BoolToString' conversion command.
@@ -638,7 +638,7 @@ Class GenericUtilities<T>
 				A2 = CopyArray(A, A2, True)
 	#End
 	
-	Function CopyArray:T[](Source:T[], Destination:T[], FitSource:Bool=False)
+	Function CopyArray:T[](Source:T[], Destination:T[], FitSource:Bool)
 		Return CopyArray(Source, Destination, 0, 0, AUTO, AUTO, FitSource)
 	End
 	
