@@ -507,6 +507,22 @@ Function TypeOf:Int(O:Object)
 	Return TYPE_OBJECT
 End
 
+Function TypeOf:Int(IO:IntObject)
+	Return TYPE_INT
+End
+
+Function TypeOf:Int(BO:BoolObject)
+	Return TYPE_BOOL
+End
+
+Function TypeOf:Int(FO:FloatObject)
+	Return TYPE_FLOAT
+End
+
+Function TypeOf:Int(SO:StringObject)
+	Return TYPE_STRING
+End
+
 Function TypeOf:Int(I:Int)
 	Return TYPE_INT
 End
