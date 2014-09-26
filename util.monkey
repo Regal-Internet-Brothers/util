@@ -93,6 +93,10 @@ Const ASCII_LINE_FEED:Int = 10
 ' You should stick to 'Null' in most cases; try not to use this.
 Const NOVAR:Int = -999999
 
+' This acts as a general "automatic-value".
+' Basically, you can check against this for things like manually defined array-lengths.
+Const UTIL_AUTO:Int = -1
+
 ' This is for situations where the length of something can be optional.
 Const AUTOMATIC_LENGTH:Int = -1
 
@@ -512,7 +516,7 @@ Class GenericUtilities<T>
 	Const COMPARE_RESPONSE_WRONG_LENGTH:Int			= -2
 	
 	' Other:
-	Const AUTO:Int = -1
+	Const AUTO:= UTIL_AUTO
 	
 	' Global variable(s):
 	
