@@ -471,6 +471,22 @@ Function TypeIsObject:Bool(O:Object)
 	Return True
 End
 
+Function TypeIsObject:Bool(IO:IntObject)
+	Return False
+End
+
+Function TypeIsObject:Bool(BO:BoolObject)
+	Return False
+End
+
+Function TypeIsObject:Bool(FO:FloatObject)
+	Return False
+End
+
+Function TypeIsObject:Bool(SO:StringObject)
+	Return False
+End
+
 Function TypeIsObject:Bool(I:Int)
 	Return False
 End
