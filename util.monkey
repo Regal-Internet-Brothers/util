@@ -466,6 +466,11 @@ Function DebugPrint:Void(Str:String, StopExecution:Bool=False)
 	Return
 End
 
+' This command is useful for dealing with arrays:
+Function OutOfBounds:Bool(Position:Int, Length:Int)
+	Return (Position >= Length)
+End
+
 ' The following functions are designed to be used with generic classes:
 Function TypeIsObject:Bool(O:Object)
 	Return True
