@@ -10,6 +10,7 @@ Public
 #End
 
 #UTIL_IMPLEMENTED = True
+#UTIL_WRAP_BOTH_WAYS = True
 
 #If IOELEMENT_IMPLEMENTED
 	#UTIL_SUPPORT_IOELEMENTS = True
@@ -31,12 +32,12 @@ Public
 
 #DEBUG_PRINT_QUOTES = False
 
-#READ_LINE_QUICKLY = True
+#UTIL_READ_LINES_QUICKLY = True
 
 #If HOST = "winnt"
-	#WRITE_LINE_ENDTYPE = "CRLF"
+	#UTIL_WRITELINE_ENDTYPE = "CRLF"
 #Else
-	#WRITE_LINE_ENDTYPE = "LF"
+	#UTIL_WRITELINE_ENDTYPE = "LF"
 #End
 
 ' Imports (Public):
@@ -46,7 +47,9 @@ Import byteorder
 Import imagedimensions
 Import retrostrings
 Import stringutil
+Import boxutil
 Import vector
+Import typetool
 
 #If CONSOLE_IMPLEMENTED
 	Import console
@@ -74,31 +77,39 @@ Import brl.databuffer
 Import brl.stream
 Import brl.filepath
 
+' Mojo:
+#If BRL_GAMETARGET_IMPLEMENTED And Not MILLISECS_IMPLEMENTED
+	Import mojo.app
+#End
+
 Public
+
+' Aliases:
+Alias TypeCode = Byte
 
 ' Constant variable(s):
 
 ' Type codes (Mainly used for generic classes):
-Const TYPE_OBJECT:Int			= 0
-Const TYPE_INT:Int				= 1
-Const TYPE_BOOL:Int				= 2
-Const TYPE_FLOAT:Int			= 3
-Const TYPE_STRING:Int			= 4
+Const TYPE_OBJECT:TypeCode			= 0
+Const TYPE_INT:TypeCode				= 1
+Const TYPE_BOOL:TypeCode			= 2
+Const TYPE_FLOAT:TypeCode			= 3
+Const TYPE_STRING:TypeCode			= 4
 
 ' Ascii codes:
-Const ASCII_CARRIAGE_RETURN:Int = 13
-Const ASCII_LINE_FEED:Int = 10
+Const ASCII_CARRIAGE_RETURN:Byte = 13
+Const ASCII_LINE_FEED:Byte = 10
 
 ' Used mainly for external code where '-9999...' isn't ever going to be valid.
 ' You should stick to 'Null' in most cases; try not to use this.
-Const NOVAR:Int = -999999
+Const NOVAR:= -999999
 
 ' This acts as a general "automatic-value".
 ' Basically, you can check against this for things like manually defined array-lengths.
-Const UTIL_AUTO:Int = -1
+Const UTIL_AUTO:Long = -1
 
 ' This is for situations where the length of something can be optional.
-Const AUTOMATIC_LENGTH:Int = -1
+Const AUTOMATIC_LENGTH:Long = -1
 
 Const ErrorTemplate:String = "[ERROR] {Debug}: " ' + Space
 Const LogTemplate:String = "[Info] {Debug}: " ' + Space
@@ -119,20 +130,20 @@ Private
 
 Public
 
-' Functions:
-Function FLAG:Int(ID:Int)
+' Functions (Public):
+Function FLAG:ULong(ID:ULong)
 	Return Pow(2, ID)
 End
 
 ' This command is little-endian only:
-Function AsByte:Int(I:Int)
+Function AsByte:UInt(I:UInt)
 	Return ((I Shl 24) Shr 24)
 End
 
 ' This command treats data as 8-bit (Turns something like $F7, into $FFFFFFF7)
 ' This is only applied on little-endian systems,
 ' please use this command for hex values (Monkey converts hex on compile-time).
-Function PaddedHex:Int(I:Int)
+Function PaddedHex:UInt(I:UInt)
 	If (Not BigEndian()) Then
 		Return AsByte(I)
 	Endif
@@ -140,9 +151,12 @@ Function PaddedHex:Int(I:Int)
 	Return I
 End
 
-Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:Int)
+Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:ULong)
 	' Check for errors:
-	If (DataSize = 0) Then Return False
+	#If Not MONKEYLANG_EXTENSION_TYPE_UNISGNED_INT
+		If (DataSize <= 0) Then Return False
+	#End
+	
 	If (InputStream = Null Or InputStream.Eof()) Then Return False
 	If (OutputStream = Null) Then Return False
 	
@@ -158,8 +172,9 @@ Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:Int)
 		Data.Discard()
 	#Else
 		'Local Data:Int[DataSize]
+		'Local Data:Byte[DataSize]
 		
-		For Local I:Int = 1 To DataSize ' Data.Length()
+		For Local I:= 1 To DataSize ' Data.Length()
 			OutputStream.WriteByte(InputStream.ReadByte())
 		Next
 	#End
@@ -168,27 +183,52 @@ Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:Int)
 	Return True
 End
 
-Function Sq:Float(Input:Float)
+Function Sq:Double(Input:Double)
 	Return Pow(Input, 2.0) ' Input * Input
 End
 
-Function Sq:Int(Input:Int)
-	Return Pow(Input, 2)
+Function Sq:Long(Input:Long)
+	Return Pow(Input, 2) ' Input * Input
 End
 
-Function WrapAngle:Float(A:Float)
-	While (A < 0.0)
-		A += 360.0
-	Wend
+#If Not MONKEYLANG_EXPLICIT_BOXES
+	Function Sq:Long(IO:IntObject)
+		Return Sq(IO.ToInt())
+	End
 	
-	While (A > 360.0)
-		A -= 360.0
-	Wend
-	
-	Return A
+	Function Sq:Double(FO:FloatObject)
+		Return Sq(FO.ToFloat())
+	End
+#End
+
+' Ideally, the 'Denom' argument should be positive:
+Function SMod:Long(Input:Long, Denom:Long)
+	Return GenericUtilities<Long>.SMod(Input, Denom)
 End
 
-Function WrapColor:Float(C:Float)
+Function SMod:Double(Input:Double, Denom:Double)
+	Return GenericUtilities<Double>.SMod(Input, Denom)
+End
+
+#If Not MONKEYLANG_EXPLICIT_BOXES
+	Function SMod:Long(IO:IntObject, Denom:IntObject)
+		Return SMod(IO.ToInt(), Denom.ToInt())
+	End
+	
+	Function SMod:Double(FO:FloatObject, Denom:FloatObject)
+		Return SMod(FO.ToFloat(), Denom.ToFloat())
+	End
+#End
+
+Function WrapAngle:Double(A:Double)
+	#If UTIL_WRAP_BOTH_WAYS
+		Return SMod(A, 360.0)
+	#Else
+		Return A Mod 360.0
+	#End
+End
+
+Function WrapColor:Float(C:Double)
 	#Rem
 	While (C < 0.0)
 		C += 255.0
@@ -199,21 +239,27 @@ Function WrapColor:Float(C:Float)
 	Wend
 	#End
 	
-	Return C Mod 256.0
+	#If UTIL_WRAP_BOTH_WAYS
+		Return SMod(C, 256.0)
+	#Else
+		Return (C Mod 256.0)
+	#End
 End
 
 ' This command is a helper function for 
-Function ProcessColorLocation:Int(Point:Int)
-	' Check for errors:
-	If (Point < 0) Then
-		Return 0
-	Endif
+Function ProcessColorLocation:UInt(Point:Byte)
+	#If Not MONKEYLANG_EXTENSION_TYPE_BYTE
+		' Check for errors:
+		If (Point < 0) Then
+			Return 0
+		Endif
+	#End
 	
 	Return (SizeOf_Integer_InBits-(SizeOf_Octet_InBits*(Point+1))) ' ((SizeOf_Integer_InBits-SizeOf_Octet_InBits)-(SizeOf_Octet_InBits*Point))
 End
 
 ' NOTE: This command will produce incorrect color values without all characters present in the encode-string.
-Function ColorToString:String(Pixel:Int, Encoding:String="ARGB")
+Function ColorToString:String(Pixel:UInt, Encoding:String="ARGB")
 	' Ensure the encoding is always described as uppercase.
 	Encoding = Encoding.ToUpper()
 	
@@ -224,7 +270,7 @@ Function ColorToString:String(Pixel:Int, Encoding:String="ARGB")
 			", A: " + ((Pixel Shr ProcessColorLocation(Encoding.Find("A"))) & $000000FF))
 End
 
-Function PrintColor:Void(Pixel:Int, Encoding:String="ARGB")
+Function PrintColor:Void(Pixel:UInt, Encoding:String="ARGB")
 	Print(ColorToString(Pixel, Encoding))
 	
 	Return
@@ -263,8 +309,74 @@ Function PopSeed:Int()
 	Return Seed
 End
 
+' This command sets the randomization seed to the current up-time of the system (In milliseconds).
+Function SetSeedToUptime:Void()
+	Seed = Millisecs()
+	
+	Return
+End
+
+' These commands are basic wrappers for the 'Rnd' command, which allow the user to generate
+' a one-off random number (Without changing the seed after execution).
+Function RandomNumber:Double()
+	' Push the current seed onto the seed-stack.
+	PushSeed()
+	
+	' Set the seed to the up-time of the system (In milliseconds).
+	SetSeedToUptime()
+	
+	' Local variable(s):
+	
+	' Randomize a number for the user.
+	Local Number:= Rnd()
+	
+	' Pop the last saved seed off of the seed-stack.
+	PopSeed()
+	
+	' Return the randomized number.
+	Return Number
+End
+
+Function RandomNumber:Double(Range:Double)
+	' Push the current seed onto the seed-stack.
+	PushSeed()
+	
+	' Set the seed to the up-time of the system (In milliseconds).
+	SetSeedToUptime()
+	
+	' Local variable(s):
+	
+	' Randomize a number for the user.
+	Local Number:= Rnd(Range)
+	
+	' Pop the last saved seed off of the seed-stack.
+	PopSeed()
+	
+	' Return the randomized number.
+	Return Number
+End
+
+Function RandomNumber:Double(Low:Double, High:Double)
+	' Push the current seed onto the seed-stack.
+	PushSeed()
+	
+	' Set the seed to the up-time of the system (In milliseconds).
+	SetSeedToUptime()
+	
+	' Local variable(s):
+	
+	' Randomize a number for the user.
+	Local Number:= Rnd(Low, High)
+	
+	' Pop the last saved seed off of the seed-stack.
+	PopSeed()
+	
+	' Return the randomized number.
+	Return Number
+End
+
 ' This command writes a standard line to a 'Stream'.
-' This supports both 'LF', and 'CRLF' line endings currently, and this can be configured with 'WRITE_LINE_ENDTYPE'.
+' This supports both 'LF', and 'CRLF' line endings currently, and this can be configured with 'UTIL_WRITELINE_ENDTYPE'.
 ' Though character encoding is supported with this, only ASCII is supported by 'ReadLine'.
 Function WriteLine:Bool(S:Stream, Line:String, CharacterEncoding:String="ascii")
 	' Check for errors:
@@ -274,7 +386,7 @@ Function WriteLine:Bool(S:Stream, Line:String, CharacterEncoding:String="ascii")
 	
 	S.WriteString(Line, CharacterEncoding)
 	
-	#If WRITE_LINE_ENDTYPE = "CRLF"
+	#If UTIL_WRITELINE_ENDTYPE = "CRLF"
 		S.WriteByte(ASCII_CARRIAGE_RETURN)
 	#End
 	
@@ -289,11 +401,12 @@ End
 Function ReadLine:String(S:Stream)
 	' Local variable(s):
 	Local Position:= S.Position()
-	Local Padding:Int = 0 ' * SizeOf_Char
+	Local Padding:ULong = 0 ' * SizeOf_Char
+	
 	Local Str:String
 	
-	#If Not READ_LINE_QUICKLY
-		Local Size:Int = 0
+	#If Not UTIL_READ_LINES_QUICKLY
+		Local Size:ULong = 0
 	#End
 	
 	While (Not S.Eof())
@@ -301,7 +414,7 @@ Function ReadLine:String(S:Stream)
 		
 		If (Char <> ASCII_LINE_FEED) Then
 			If (Char <> ASCII_CARRIAGE_RETURN) Then
-				#If READ_LINE_QUICKLY
+				#If UTIL_READ_LINES_QUICKLY
 					Str += String.FromChar(Char)
 				#Else
 					Size += 1
@@ -322,7 +435,7 @@ Function ReadLine:String(S:Stream)
 		Endif
 	Wend
 	
-	#If Not READ_LINE_QUICKLY
+	#If Not UTIL_READ_LINES_QUICKLY
 		S.Seek(Position)
 		
 		Str = S.ReadString(Size, "ascii")
@@ -334,7 +447,7 @@ Function ReadLine:String(S:Stream)
 	Return Str
 End
 
-Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Int=AUTOMATIC_LENGTH, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)
+Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Long=AUTOMATIC_LENGTH, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)
 	Local BufferAvailable:Bool = (Buffer <> Null)
 	
 	If (BufferAvailable And OnlyWhenDifferentSizes) Then
@@ -399,10 +512,13 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 			TempMsg = LogTemplate
 		Endif
 		
-		#If DEBUG_PRINT_QUOTES			
-			Msg = Tempmsg + Quote + Msg + Quote
+		' Generate the final message:
+		Msg = TempMsg +
+		
+		#If DEBUG_PRINT_QUOTES
+			Quote + Msg + Quote
 		#Else
-			Msg = TempMsg + Msg
+			Msg
 		#End
 		
 		#If CONSOLE_IMPLEMENTED
@@ -451,23 +567,17 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 		#End
 	Endif
 	
-	#If CONFIG = "debug"
-		' Nothing so far.
-	#Else
-		' Nothing so far.
-	#End
-
 	Return
 End
 
 Function DebugPrint:Void(Str:String, StopExecution:Bool=False)
 	DebugError(Str, StopExecution)
-
+	
 	Return
 End
 
 ' This command is useful for dealing with arrays:
-Function OutOfBounds:Bool(Position:Int, Length:Int)
+Function OutOfBounds:Bool(Position:ULong, Length:ULong)
 	Return (Position >= Length)
 End
 
@@ -508,41 +618,67 @@ Function TypeIsObject:Bool(S:String)
 	Return False
 End
 
-Function TypeOf:Int(O:Object)
+Function TypeOf:TypeCode(O:Object)
 	Return TYPE_OBJECT
 End
 
-Function TypeOf:Int(IO:IntObject)
+Function TypeOf:TypeCode(IO:IntObject)
 	Return TYPE_INT
 End
 
-Function TypeOf:Int(BO:BoolObject)
+Function TypeOf:TypeCode(BO:BoolObject)
 	Return TYPE_BOOL
 End
 
-Function TypeOf:Int(FO:FloatObject)
+Function TypeOf:TypeCode(FO:FloatObject)
 	Return TYPE_FLOAT
 End
 
-Function TypeOf:Int(SO:StringObject)
+Function TypeOf:TypeCode(SO:StringObject)
 	Return TYPE_STRING
 End
 
-Function TypeOf:Int(I:Int)
+Function TypeOf:TypeCode(I:Int)
 	Return TYPE_INT
 End
 
-Function TypeOf:Int(B:Bool)
+Function TypeOf:TypeCode(B:Bool)
 	Return TYPE_BOOL
 End
 
-Function TypeOf:Int(F:Float)
+Function TypeOf:TypeCode(F:Float)
 	Return TYPE_FLOAT
 End
 
-Function TypeOf:Int(S:String)
+Function TypeOf:TypeCode(S:String)
 	Return TYPE_STRING
 End
+
+' Functions (Private):
+Private
+
+' The following commands were created to solve auto-conversion conflicts with the standard "box" classes:
+Function Sgn:Long(I:Long)
+	Return math.Sgn(I)
+End
+
+Function Sgn:Double(F:Double)
+	Return math.Sgn(F)
+End
+
+#If Not MONKEYLANG_EXPLICIT_BOXES
+	Function Sgn:Long(IO:IntObject)
+		Return Sgn(IO.ToInt())
+		'Return math.Sgn(IO.ToInt())
+	End
+	
+	Function Sgn:Double(FO:FloatObject)
+		Return Sgn(FO.ToFloat())
+		'Return math.Sgn(FO.ToFloat())
+	End
+#End
+
+Public
 
 ' Classes:
 Class GenericUtilities<T>
@@ -563,7 +699,7 @@ Class GenericUtilities<T>
 	' Functions:
 	
 	' This command gives the user the type-code of 'T'.
-	Function Type:Int()
+	Function Type:TypeCode()
 		' Return the type code of 'NIL'.
 		Return TypeOf(NIL)
 	End
@@ -579,7 +715,7 @@ Class GenericUtilities<T>
 	End
 	
 	' This command reads a string from a standard 'Stream' object.
-	Function AsString:String(S:Stream, Length:Int=AUTO, Encoding:String="utf8")
+	Function AsString:String(S:Stream, Length:Long=AUTO, Encoding:String="utf8")
 		If (Length = AUTO) Then
 			Length = S.Length()
 		Endif
@@ -587,25 +723,33 @@ Class GenericUtilities<T>
 		Return S.ReadString(Length, Encoding)
 	End
 	
-	Function AsString:String(Input:T[], Offset:Int=0, Length:Int=AUTO, AddSpaces:Bool=True)
+	' By default, this command will add the 'Offset' argument to the processed version of the 'Length' argument.
+	' To disable this, set 'ApplyOffsetToLength' to 'False'.
+	Function AsString:String(Input:T[], Offset:ULong=0, Length:Long=AUTO, AddSpaces:Bool=True, ApplyOffsetToLength:Bool=True)
 		' Local variable(s):
 		Local Output:String = LeftBracket
 		
-		' If no length was specified, use the array's length.
+		' If no length was specified, use the array's length:
 		If (Length = AUTO) Then
 			Length = Input.Length()
 		Endif
 		
-		Local VirtualLength:= Length+Offset
+		Local VirtualLength:ULong
 		
-		For Local Index:Int = Offset Until VirtualLength
-			Output += Input[Index]
+		If (ApplyOffsetToLength) Then
+			VirtualLength = Length+Offset
+		Else
+			VirtualLength = Length
+		Endif
+		
+		For Local Index:= Offset Until VirtualLength
+			Output += String(Input[Index])
 			
 			If (Index+1 < VirtualLength) Then
-				Output += Comma
-				
 				If (AddSpaces) Then
-					Output += Space
+					Output += (Comma + Space)
+				Else
+					Output += Comma
 				Endif
 			Endif
 		Next
@@ -613,20 +757,20 @@ Class GenericUtilities<T>
 		Return Output + RightBracket
 	End
 	
-	Function CopyStringToArray:T[](S:String, Input:T[], Offset:Int=0, Length:Int=AUTO)
+	Function CopyStringToArray:T[](Input:String, Output:T[], Offset:ULong=0, Length:Long=AUTO)
 		If (Length = AUTO) Then
-			Length = Min(S.Length(), Input.Length())
+			Length = Min(Input.Length(), Output.Length())
 		Endif
 		
-		For Local I:Int = Offset Until Length
-			Input[I] = S[I]
+		For Local I:= Offset Until Length
+			Output[I] = Input[I]
 		Next
 		
-		' Just for the sake of convenience, return the 'Input' array.
-		Return Input
+		' Just for the sake of convenience, return the 'Output' array.
+		Return Output
 	End
 	
-	Function IndexOfList:T(L:List<T>, Index:Int=0)
+	Function IndexOfList:T(L:List<T>, Index:ULong=0)
 		' Local variable(s):
 		Local Data:list.Node<T> = L.FirstNode()
 				
@@ -653,6 +797,10 @@ Class GenericUtilities<T>
 		Next
 		
 		Return Input
+	End
+	
+	Function SMod:T(Input:T, Denom:T)
+		Return (Input Mod (Denom*Sgn(Input)))
 	End
 	
 	Function PrintArray:Void(Input:T[])
@@ -683,7 +831,7 @@ Class GenericUtilities<T>
 		Return CopyArray(Source, Destination, 0, 0, AUTO, AUTO, FitSource)
 	End
 	
-	Function CopyArray:T[](Source:T[], Destination:T[], Source_Offset:Int=0, Destination_Offset:Int=0, Source_Length:Int=AUTO, Destination_Length:Int=AUTO, FitSource:Bool=False)
+	Function CopyArray:T[](Source:T[], Destination:T[], Source_Offset:ULong=0, Destination_Offset:ULong=0, Source_Length:Long=AUTO, Destination_Length:Long=AUTO, FitSource:Bool=False)
 		If (Source_Length = AUTO) Then
 			Source_Length = Source.Length()
 		Endif
@@ -699,7 +847,7 @@ Class GenericUtilities<T>
 		Local Source_RealLength:= Source.Length()
 		
 		' Calculate the source and destination areas:
-		Local Source_Area:Int = (Source_Length-Source_Offset)
+		Local Source_Area:Long = (Source_Length-Source_Offset)
 		
 		' Make sure we have a source to work with:
 		If (Source_Area <= 0) Then
@@ -707,7 +855,7 @@ Class GenericUtilities<T>
 			Return []
 		Endif
 		
-		Local Destination_Area:Int = (Destination_Length-Destination_Offset)
+		Local Destination_Area:Long = (Destination_Length-Destination_Offset)
 		
 		' If we're not going to fit the source, check if the destination-area is big enough:
 		If (Not FitSource) Then
@@ -717,11 +865,11 @@ Class GenericUtilities<T>
 			Endif
 		Endif
 		
-		Local Operation_Area:Int
+		Local Operation_Area:Long
 		
 		If (FitSource And Destination_Area < Source_Area) Then
-			Local AreaDelta:Int = (Source_Area-Destination_Area)
-			Local NewArea:Int = (Destination_RealLength+AreaDelta)
+			Local AreaDelta:Long = (Source_Area-Destination_Area)
+			Local NewArea:Long = (Destination_RealLength+AreaDelta)
 			
 			If (NewArea > Destination_RealLength) Then
 				Destination = Destination.Resize(NewArea)
@@ -786,9 +934,9 @@ Class GenericUtilities<T>
 	Function Read:T(S:Stream)
 		Return Read(S, NIL)
 	End
-		
-	Function Read:T[](S:Stream, DataArray:T[], Size:Int=AUTO)
-		If (Size = AUTO) Then Size = S.ReadInt()
+	
+	Function Read:T[](S:Stream, DataArray:T[], Size:Long=AUTO)
+		If (Size = AUTO) Then Size = S.ReadInt() ' S.ReadLong()
 		
 		If (Size > 0) Then
 			If (DataArray.Length() = 0) Then
@@ -797,7 +945,7 @@ Class GenericUtilities<T>
 		Endif
 		
 		' Local variable(s):
-		Local DLength:Int = Min(DataArray.Length, Size)
+		Local DLength:= Min(DataArray.Length(), Size)
 		
 		For Local Index:= 0 Until DLength
 			DataArray[Index] = Read(S, NIL)
@@ -810,7 +958,9 @@ Class GenericUtilities<T>
 		' Local variable(s):
 		Local DLength:= DataArray.Length()
 		
-		If (WriteLength) Then S.WriteInt(DLength)
+		If (WriteLength) Then
+			S.WriteInt(DLength) ' S.WriteLong(DLength)
+		Endif
 		
 		For Local Index:= 0 Until DLength
 			Write(S, DataArray[Index])
@@ -819,85 +969,99 @@ Class GenericUtilities<T>
 		Return
 	End
 	
-	Function Read:Int(S:Stream, Indentifier:Int, Size:Int=4)
-		' Local variable(s):
-		Local Data:Int = 0
-		
-		If (Size > 1) Then
-			If (Size < 4) Then
-				Data = S.ReadShort()
-			Else
-				If (Size > 4) Then
-					S.ReadInt()
+	Function Read:Long(S:Stream, Identifier:Long, Size:Byte=4)
+			If (Size > 1) Then
+				If (Size < 4) Then
+					Return S.ReadShort()
+				Else
+					' Good enough for now:
+					If (Size > 4) Then
+						S.ReadInt()
+					Endif
+					
+					Return S.ReadInt()
+					'Return S.ReadLong()
 				Endif
-				
-				Data = S.ReadInt()
+		#If MONKEYLANG_EXTENSION_TYPE_BYTE
+			Else
+		#Else
+			Elseif (Size > 0) Then
+		#End
+				Return S.ReadByte()
 			Endif
-		Else
-			Data = S.ReadByte()
-		Endif
 		
-		Return Data
+		' Return the default response.
+		Return 0
 	End
 	
-	Function Write:Void(S:Stream, Data:Int, Size:Int=4)
-		Size = IntSize(Size)
+	Function Write:Void(S:Stream, Data:Long, Size:Byte=4)
+		Size = Byte(IntSize(Size)) ' ApplyByteBounds(IntSize(Size))
 		
-		If (Size > 1) Then
-			If (Size < 4) Then
-				S.WriteShort(Data)
-			Else
-				If (Size > 4) Then
-					S.WriteInt(0)
+			If (Size > 1) Then
+				If (Size < 4) Then
+					S.WriteShort(Data)
+				Else
+					If (Size > 4) Then
+						S.WriteInt(0)
+					Endif
+					
+					S.WriteInt(Data)
+					'S.WriteLong(Data)
 				Endif
-				
-				S.WriteInt(Data)
+		#If MONKEYLANG_EXTENSION_TYPE_BYTE
+			Else
+		#Else
+			Elseif (Size > 0) Then
+		#End
+				S.WriteByte(Data)
 			Endif
-		Else
-			S.WriteByte(Data)
-		Endif
 		
 		Return
 	End
 	
 	#Rem
 	Function Read:Bool(S:Stream, Identifier:Bool)
-		Return Read(S, Int(Identifier), 1)
+		Return Read(S, Long(Identifier), 1)
 	End
 	
 	Function Write:Void(S:Stream, B:Bool)
-		Write(S, Int(B), 1)
+		Write(S, Long(B), 1)
 		
 		Return
 	End
 	#End
 	
-	Function Read:Float(S:Stream, Identifier:Float)		
-		Return S.ReadFloat()
+	'Function Read:Double(S:Stream, Identifier:Double)
+	Function Read:Float(S:Stream, Identifier:Float)
+		Return S.ReadFloat() ' S.ReadDouble()
 	End
 	
+	'Function Write:Void(S:Stream, Data:Double)
 	Function Write:Void(S:Stream, Data:Float)
-		S.WriteFloat(Data)
+		S.WriteFloat(Data) ' S.ReadDouble(Data)
 		
 		Return
 	End
 	
-	Function Read:String(S:Stream, Data:String, Encoding:String="utf8", Size:Int=AUTO)
+	Function Read:String(S:Stream, Data:String, Encoding:String="utf8", Size:Long=AUTO)
+		' Check if the size was manually specified:
 		If (Size = AUTO) Then
-			Size = S.ReadInt()
+			' Read the string's length from the input-stream.
+			Size = S.ReadInt() ' S.ReadLong()
 		Endif
 		
-		Data = S.ReadString(Size, Encoding)
-		
-		' Return the newly read string.
-		Return Data
+		' Read the desired string from the input-stream, then return it.
+		Return S.ReadString(Size, Encoding)
 	End
 	
 	Function Write:Void(S:Stream, Data:String, Encoding:String="utf8", WriteSize:Bool=True)
+		' Check if we're writing the size of the input-string.
 		If (WriteSize) Then
-			S.WriteInt(Data.Length())
+			' Write the length of the input-string to the output-stream.
+			S.WriteInt(Data.Length()) ' S.WriteLong(Data.Length())
 		Endif
 		
+		' Write the input-string to the output-stream.
 		S.WriteString(Data, Encoding)
 		
 		Return
@@ -920,6 +1084,30 @@ Class GenericUtilities<T>
 			Endif
 			
 			Data.Save(S)
+		End
+	#End
+	
+	' The following commands were created to solve auto-conversion conflicts with the standard "box" classes:
+	#If Not MONKEYLANG_EXPLICIT_BOXES
+		Function Read:Long(S:Stream, Identifier:IntObject, Size:Byte=4)
+			Return Read(S, Identifier.ToInt(), Size)
+		End
+		
+		Function Write:Void(S:Stream, Data:IntObject, Size:Byte=4)
+			Write(S, Data.ToInt(), Size)
+			
+			Return
+		End
+		
+		'Function Read:Double(S:Stream, Identifier:FloatObject)
+		Function Read:Float(S:Stream, Identifier:FloatObject)
+			Return Read(S, Identifier.ToFloat())
+		End
+		
+		Function Write:Void(S:Stream, Data:FloatObject)
+			Write(S, Data.ToFloat())
+			
+			Return
 		End
 	#End
 	
