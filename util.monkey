@@ -11,6 +11,7 @@ Public
 
 #UTIL_IMPLEMENTED = True
 #UTIL_WRAP_BOTH_WAYS = True
+#UTIL_PREPROCESSOR_FIXES = False ' True
 
 #If IOELEMENT_IMPLEMENTED
 	#UTIL_SUPPORT_IOELEMENTS = True
@@ -32,12 +33,32 @@ Public
 
 #DEBUG_PRINT_QUOTES = False
 
-#UTIL_READ_LINES_QUICKLY = True
-
-#If HOST = "winnt"
-	#UTIL_WRITELINE_ENDTYPE = "CRLF"
+#If Not UTIL_PREPROCESSOR_FIXES
+	' These are the actual default settings for these variables:
+	#UTIL_READ_LINES_QUICKLY = True
+	
+	#If HOST = "winnt"
+		#UTIL_WRITELINE_ENDTYPE = "CRLF" ' "LF"
+	#Else
+		#UTIL_WRITELINE_ENDTYPE = "LF"
+	#End
 #Else
-	#UTIL_WRITELINE_ENDTYPE = "LF"
+	' The default values of these are purposely separate from the main settings:
+	#If READ_LINE_QUICKLY
+		#UTIL_READ_LINES_QUICKLY = READ_LINE_QUICKLY
+	#Else
+		#UTIL_READ_LINES_QUICKLY = True
+	#End
+	
+	#If WRITE_LINE_ENDTYPE
+		#UTIL_WRITELINE_ENDTYPE = WRITE_LINE_ENDTYPE
+	#Else
+		#If HOST = "winnt"
+			#UTIL_WRITELINE_ENDTYPE = "CRLF"
+		#Else
+			#UTIL_WRITELINE_ENDTYPE = "LF"
+		#End
+	#End
 #End
 
 ' Imports (Public):
