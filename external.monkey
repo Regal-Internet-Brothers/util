@@ -3,7 +3,7 @@ Strict
 Public
 
 ' Preprocessor related:
-#If TARGET = "glfw" Or TARGET = "sexy"
+#If TARGET = "glfw" And (Not GLFW_VERSION Or GLFW_VERSION = 1) ' Or TARGET = "sexy"
 	#CPUCOUNT_IMPLEMENTED = True
 #End
 
