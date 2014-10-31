@@ -12,6 +12,7 @@ Public
 #UTIL_IMPLEMENTED = True
 #UTIL_WRAP_BOTH_WAYS = True
 #UTIL_PREPROCESSOR_FIXES = False ' True
+#UTIL_DELEGATE_TYPETOOL = False
 
 #If IOELEMENT_IMPLEMENTED
 	#UTIL_SUPPORT_IOELEMENTS = True
@@ -70,7 +71,6 @@ Import retrostrings
 Import stringutil
 Import boxutil
 Import vector
-Import typetool
 
 #If CONSOLE_IMPLEMENTED
 	Import console
@@ -104,6 +104,17 @@ Import brl.filepath
 #End
 
 Public
+
+' Imports (Other):
+#If Not UTIL_DELEGATE_TYPETOOL
+	Private
+#End
+
+Import typetool
+
+#If Not UTIL_DELEGATE_TYPETOOL
+	Public
+#End
 
 ' Aliases:
 Alias TypeCode = Byte
