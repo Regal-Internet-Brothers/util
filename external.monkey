@@ -17,7 +17,9 @@ Public
 Extern
 
 #If CPUCOUNT_IMPLEMENTED
-	Function CPUCount:Int()="glfwGetNumberOfProcessors"
+	#If TARGET = "glfw"
+		Function CPUCount:Int()="glfwGetNumberOfProcessors"
+	#End
 #End
 
 Public
