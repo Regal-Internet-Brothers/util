@@ -852,7 +852,7 @@ Class GenericUtilities<T>
 			
 			If (Index+1 < VirtualLength) Then
 				If (AddSpaces) Then
-					Output += (Comma + Space)
+					Output += (Comma + Space) ' ", "
 				Else
 					Output += Comma
 				Endif
@@ -910,6 +910,24 @@ Class GenericUtilities<T>
 	
 	Function PrintArray:Void(Input:T[])
 		Print(AsString(Input))
+		
+		Return
+	End
+	
+	Function OutputArray:Void(Input:T[])
+		PrintArray(Input)
+		
+		Return
+	End
+	
+	Function OutputArray:Void(Input:T[], S:Stream, WriteLength:Bool=False)
+		Write(S, Input, WriteLength)
+		
+		Return
+	End
+	
+	Method ReadArray:Void(Input:T[], S:Stream, Size:Long=AUTO)
+		Read(S, Input, Size)
 		
 		Return
 	End
@@ -1041,7 +1059,9 @@ Class GenericUtilities<T>
 	End
 	
 	Function Read:T[](S:Stream, DataArray:T[], Size:Long=AUTO)
-		If (Size = AUTO) Then Size = S.ReadInt() ' S.ReadLong()
+		If (Size = AUTO) Then
+			Size = S.ReadInt() ' S.ReadLong()
+		Endif
 		
 		If (Size > 0) Then
 			If (DataArray.Length() = 0) Then
