@@ -145,6 +145,11 @@ Const TYPE_OBJECT_STR:String			= "Object"
 	Const TYPE_STRING_STR:String		= "$"
 #End
 
+' Comparison response-codes:
+Const COMPARE_UNKNOWN:Int = 0
+Const COMPARE_RIGHT:Int = 1
+Const COMPARE_LEFT:Int = -1
+
 ' Ascii codes:
 Const ASCII_CARRIAGE_RETURN:Byte = 13
 Const ASCII_LINE_FEED:Byte = 10
@@ -322,7 +327,7 @@ End
 ' The standard return type for non-integral comparison is currently 'Int':
 Function CompareFloats:Int(X:Float, Y:Float)
 	If (X < Y) Then
-		Return -1
+		Return COMPARE_LEFT
 	Endif
 	
 	Return Int(X > Y)
@@ -330,7 +335,7 @@ End
 
 Function CompareDoubles:Int(X:Double, Y:Double)
 	If (X < Y) Then
-		Return -1
+		Return COMPARE_LEFT
 	Endif
 	
 	Return Int(X > Y)
@@ -385,7 +390,7 @@ End
 #End
 
 ' This command is a helper function for the inverse position of a byte inside of an integer.
-Function ProcessColorLocation:UInt(Point:Byte) ' Byte
+Function ProcessColorLocation:UInt(Point:Byte)
 	#If Not MONKEYLANG_EXTENSION_TYPE_BYTE
 		' Check for errors:
 		If (Point < 0) Then
