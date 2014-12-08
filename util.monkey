@@ -15,12 +15,6 @@ Public
 #UTIL_DELEGATE_TYPETOOL = False
 #UTIL_TYPECODE_STRINGS_USE_SHORTHAND = False
 
-#If IOELEMENT_IMPLEMENTED
-	#UTIL_SUPPORT_IOELEMENTS = True
-#Else
-	#UTIL_SUPPORT_IOELEMENTS = False
-#End
-
 #If CONFIG = "debug"
 	#DEBUG_PRINT = True
 #Else
@@ -64,19 +58,17 @@ Public
 #End
 
 ' Imports (Public):
-Import autostream
+Import external
+Import fallbacks
 
+' Open Source Modules:
+Import autostream
 Import byteorder
 Import imagedimensions
 Import retrostrings
 Import stringutil
 Import boxutil
 Import vector
-
-#If CONSOLE_IMPLEMENTED
-	Import console
-#End
-
 Import sizeof
 Import time
 
@@ -84,13 +76,14 @@ Import time
 	Import mojoemulator
 #End
 
+' Closed Source Modules (Completely optional):
+Import console
+
 ' Imports (Private):
 Private
 
 ' Unofficial:
-#If UTIL_SUPPORT_IOELEMENTS
-	Import ioelement
-#End
+Import ioelement
 
 ' Official:
 
@@ -115,6 +108,11 @@ Import typetool
 
 #If Not UTIL_DELEGATE_TYPETOOL
 	Public
+#End
+
+' Implementation checks:
+#If IOELEMENT_IMPLEMENTED
+	#UTIL_SUPPORT_IOELEMENTS = True
 #End
 
 ' Aliases:
@@ -851,6 +849,28 @@ Function TypeToString:String(Code:TypeCode)
 	
 	' If nothing else, return the "unknown type" 'String'.
 	Return TYPE_UNKNOWN_STR
+End
+
+' Other:
+
+' This command acts as a wrapper for the standard 'SetClipboard' command.
+' This will not store the current state of the clipboard in any kind of collection.
+Function PushClipboard:Bool(Input:String)
+	Return SetClipboard(Input)
+End
+
+' This command will retrieve the data from the internal clipboard, then clear it after:
+Function PopClipboard:String()
+	' Local variable(s):
+	
+	' Get the current state of the clipboard.
+	Local Clipboard:= GetClipboard()
+	
+	' Clear the clipboard.
+	ClearClipboard()
+	
+	' Return the data we retrieved.
+	Return Clipboard
 End
 
 ' Functions (Private):
