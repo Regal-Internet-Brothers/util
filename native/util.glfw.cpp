@@ -7,10 +7,8 @@ namespace external_util
 	// Functions:
 	bool setClipboard(String input)
 	{
-		const char* source = input.ToCString<char>();
-		
 		// Set the system's clipboard-string.
-		glfwSetClipboardString(BBGlfwGame::GlfwGame()->GetGLFWwindow(), source);
+		glfwSetClipboardString(BBGlfwGame::GlfwGame()->GetGLFWwindow(), input.ToUtf8()); // input.ToCString<char>();
 		
 		// Return the default response.
 		return true;
