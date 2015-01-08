@@ -4,25 +4,23 @@ Public
 
 ' Preprocessor related:
 #If TARGET = "glfw" ' Or TARGET = "sexy"
-	#If (Not GLFW_VERSION Or GLFW_VERSION = 2)
-		#UTIL_CPUCOUNT_IMPLEMENTED = True
-	#End
-	
 	' This check is done without an associated import for a good reason,
 	' this module assumes such fixes will be described by an outside module.
 	' The primary module ('util') will be used for this under normal conditions.
 	#If UTIL_PREPROCESSOR_FIXES
-		CPUCOUNT_IMPLEMENTED = UTIL_CPUCOUNT_IMPLEMENTED
+		#CPUCOUNT_IMPLEMENTED = UTIL_CPUCOUNT_IMPLEMENTED
 	#End
 	
 	' Native clipboard-functionality is not available
 	' from earlier versions of GLFW, you must use GLFW3:
-	#If GLFW_VERSION And GLFW_VERSION = 3
+	#If GLFW_VERSION = 3
 		#UTIL_CLIPBOARD_NATIVE = True
 		
 		#UTIL_CLIPBOARD_INPUT_AVAILABLE = True
 		#UTIL_CLIPBOARD_OUTPUT_AVAILABLE = True
 		#UTIL_CLIPBOARD_CLEAR_AVAILABLE = True
+	#Elseif GLFW_VERSION = 2
+		#UTIL_CPUCOUNT_IMPLEMENTED = True
 	#End
 #End
 
@@ -41,7 +39,6 @@ Public
 ' Nothing so far.
 
 ' Imports (Native):
-
 #If UTIL_CLIPBOARD_NATIVE ' TARGET = "glfw"
 	Import "native/util.${TARGET}.${LANG}"
 #End
@@ -59,6 +56,8 @@ Extern
 #If UTIL_CPUCOUNT_IMPLEMENTED
 	#If TARGET = "glfw"
 		Function CPUCount:Int()="glfwGetNumberOfProcessors"
+	#Else
+		#Error "Internal Error: Unable to find a valid implementation of 'CPUCount'"
 	#End
 #End
 
