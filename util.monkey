@@ -183,14 +183,6 @@ Private
 Public
 
 ' Functions (Public):
-Function FLAG:ULong(ID:ULong)
-	Return Pow(2, ID)
-End
-
-' This command is little-endian only:
-Function AsByte:UInt(I:UInt)
-	Return ((I Shl 24) Shr 24)
-End
 
 ' This command treats data as 8-bit (Turns something like $F7, into $FFFFFFF7)
 ' This is only applied on little-endian systems,
@@ -236,11 +228,11 @@ Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:ULong)
 End
 
 Function Sq:Double(Input:Double)
-	Return Pow(Input, 2.0) ' Input * Input
+	Return Input * Input ' Pow(Input, 2.0)
 End
 
 Function Sq:Long(Input:Long)
-	Return Pow(Input, 2) ' Input * Input
+	Return Input * Input ' Pow(Input, 2)
 End
 
 #If Not MONKEYLANG_EXPLICIT_BOXES
@@ -280,7 +272,7 @@ Function WrapAngle:Double(A:Double)
 	#End
 End
 
-Function WrapColor:Float(C:Double)
+Function WrapColor:Double(C:Double)
 	#Rem
 	While (C < 0.0)
 		C += 255.0
@@ -296,6 +288,72 @@ Function WrapColor:Float(C:Double)
 	#Else
 		Return (C Mod 256.0)
 	#End
+End
+
+' Bitwise manipulation commands:
+Function FLAG:ULong(BitNumber:ULong)
+	Return Pow(2, BitNumber)
+End
+
+' This command is little-endian only:
+Function AsByte:UInt(I:UInt)
+	Return ((I Shl 24) Shr 24)
+End
+
+Function ToggleBit:Int(BitField:Int, BitNumber:Int, Value:Bool)
+	Return ToggleBitMask(BitField, Pow(2, BitNumber), Value)
+End
+
+Function ToggleBitMask:Int(BitField:Int, Mask:Int, Value:Bool)
+	If (Value) Then
+		Return ActivateBitMask(BitField, Mask)
+	Endif
+	
+	Return DeactivateBitMask(BitField, Mask)
+End
+
+Function ToggleBit:Int(BitField:Int, BitNumber:Int)
+	Return ToggleBitMask(BitField, Pow(2, BitNumber))
+End
+
+Function ToggleBitMask:Int(BitField:Int, Mask:Int)
+	If ((BitField & Mask) > 0) Then
+		Return ToggleBitMask(BitField, Mask, False)
+	Endif
+	
+	Return ToggleBitMask(BitField, Mask, True)
+End
+
+Function BitActivated:Bool(BitField:Int, BitNumber:Int)
+	Return BitMaskActivated(BitField, Pow(2, BitNumber))
+End
+
+Function BitDeactivated:Bool(BitField:Int, BitNumber:Int)
+	Return Not BitActivated(BitField, BitNumber)
+End
+
+Function BitMaskActivated:Bool(BitField:Int, Mask:Int)
+	Return ((BitField & Mask) > 0)
+End
+
+Function BitMaskDeactivated:Bool(BitField:Int, Mask:Int)
+	Return Not BitMaskActivated(BitField, Mask)
+End
+
+Function ActivateBit:Int(BitField:Int, BitNumber:Int)
+	Return ActivateMask(BitField, Pow(2, BitNumber))
+End
+
+Function DeactivateBit:Int(BitField:Int, Mask:Int)
+	Return DeactivateMask(BitField, Pow(2, BitNumber))
+End
+
+Function ActivateBitMask:Int(BitField:Int, Mask:Int)
+	Return (BitField | Mask)
+End
+
+Function DeactivateBitMask:Int(BitField:Int, Mask:Int)
+	Return (BitField & ~Mask) ' (BitField ~ Mask)
 End
 
 ' Comparison commands:
@@ -711,7 +769,13 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 	Return
 End
 
-Function DebugPrint:Void(Str:String, StopExecution:Bool=False)
+Function DebugPrint:Void(Str:String="", StopExecution:Bool=False)
+	If (Not StopExecution And Str.Length() = 0) Then
+		Print("")
+		
+		Return
+	Endif
+	
 	DebugError(Str, StopExecution)
 	
 	Return
