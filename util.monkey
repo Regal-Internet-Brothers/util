@@ -341,11 +341,11 @@ Function BitMaskDeactivated:Bool(BitField:Int, Mask:Int)
 End
 
 Function ActivateBit:Int(BitField:Int, BitNumber:Int)
-	Return ActivateMask(BitField, Pow(2, BitNumber))
+	Return ActivateBitMask(BitField, Pow(2, BitNumber))
 End
 
-Function DeactivateBit:Int(BitField:Int, Mask:Int)
-	Return DeactivateMask(BitField, Pow(2, BitNumber))
+Function DeactivateBit:Int(BitField:Int, BitNumber:Int)
+	Return DeactivateBitMask(BitField, Pow(2, BitNumber))
 End
 
 Function ActivateBitMask:Int(BitField:Int, Mask:Int)
@@ -1341,7 +1341,7 @@ Class GenericUtilities<T>
 	
 	'Function Write:Void(S:Stream, Data:Double)
 	Function Write:Void(S:Stream, Data:Float)
-		S.WriteFloat(Data) ' S.ReadDouble(Data)
+		S.WriteFloat(Data) ' S.WriteDouble(Data)
 		
 		Return
 	End
@@ -1372,20 +1372,12 @@ Class GenericUtilities<T>
 	
 	#If UTIL_SUPPORT_IOELEMENTS
 		Function Read:Void(S:Stream, Data:InputChildElement)
-			If (Data = Null) Then
-				Return
-			Endif
-			
 			Data.Load(S)
 			
 			Return
 		End
 		
 		Function Write:Void(S:Stream, Data:OutputChildElement)
-			If (Data = Null) Then
-				Return
-			Endif
-			
 			Data.Save(S)
 		End
 	#End
