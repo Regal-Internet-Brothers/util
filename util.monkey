@@ -1201,6 +1201,18 @@ Class GenericUtilities<T>
 		Return CopyArray(Source, New T[Source.Length()])
 	End
 	
+	Function CopyStack:Void(In:Stack<T>, Out:Stack<T>)
+		Local In_Length:= In.Length
+		
+		Out.Length = In_Length
+		
+		For Local I:= 0 Until In_Length
+			Out.Push(In.Get(I))
+		Next
+		
+		Return
+	End
+	
 	' This command returns a positive number upon an error,
 	' otherwise a 'response code' will be given (See the "Contant variable(s)" section for details).
 	Function Compare:Int(A1:T[], A2:T[], CheckLength:Bool=True)
