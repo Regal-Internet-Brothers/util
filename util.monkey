@@ -1202,11 +1202,7 @@ Class GenericUtilities<T>
 	End
 	
 	Function CopyStack:Void(In:Stack<T>, Out:Stack<T>)
-		Local In_Length:= In.Length
-		
-		Out.Length = In_Length
-		
-		For Local I:= 0 Until In_Length
+		For Local I:= 0 Until In.Length
 			Out.Push(In.Get(I))
 		Next
 		
