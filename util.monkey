@@ -3,18 +3,17 @@ Strict
 Public
 
 ' Preprocessor related:
-#Rem
-#If TARGET = "glfw" Or TARGET = "sexy"
-	#GLFW_TARGET = True
-#End
-#End
 
+' 'util' configuration:
 #UTIL_IMPLEMENTED = True
+#UTIL_TEMP_BUFFERS = True
 #UTIL_WRAP_BOTH_WAYS = True
-#UTIL_PREPROCESSOR_FIXES = False ' True
-#UTIL_DELEGATE_TYPETOOL = False
-#UTIL_TYPECODE_STRINGS_USE_SHORTHAND = False
 
+'#UTIL_DELEGATE_TYPETOOL = False
+'#UTIL_TYPECODE_STRINGS_USE_SHORTHAND = False
+'#UTIL_PREPROCESSOR_FIXES = False ' True
+
+' Other:
 #If CONFIG = "debug"
 	#DEBUG_PRINT = True
 #Else
@@ -29,39 +28,11 @@ Public
 
 #DEBUG_PRINT_QUOTES = False
 
-#If Not UTIL_PREPROCESSOR_FIXES
-	' These are the actual default settings for these variables:
-	#UTIL_READ_LINES_QUICKLY = True
-	
-	#If HOST = "winnt"
-		#UTIL_WRITELINE_ENDTYPE = "CRLF" ' "LF"
-	#Else
-		#UTIL_WRITELINE_ENDTYPE = "LF"
-	#End
-#Else
-	' The default values of these are purposely separate from the main settings:
-	#If READ_LINE_QUICKLY
-		#UTIL_READ_LINES_QUICKLY = READ_LINE_QUICKLY
-	#Else
-		#UTIL_READ_LINES_QUICKLY = True
-	#End
-	
-	#If WRITE_LINE_ENDTYPE
-		#UTIL_WRITELINE_ENDTYPE = WRITE_LINE_ENDTYPE
-	#Else
-		#If HOST = "winnt"
-			#UTIL_WRITELINE_ENDTYPE = "CRLF"
-		#Else
-			#UTIL_WRITELINE_ENDTYPE = "LF"
-		#End
-	#End
-#End
-
 ' Imports (Public):
 Import external
 Import fallbacks
 
-' Open Source Modules:
+' Default imports:
 Import autostream
 Import byteorder
 Import imagedimensions
@@ -76,7 +47,7 @@ Import time
 	Import mojoemulator
 #End
 
-' Closed Source Modules (Completely optional):
+' Optional (Closed source):
 Import console
 
 ' Imports (Private):
@@ -205,13 +176,13 @@ Function Transfer:Bool(InputStream:Stream, OutputStream:Stream, DataSize:ULong)
 	If (OutputStream = Null) Then Return False
 	
 	' Local variable(s):
-	#If FLAG_TEMP_BUFFERS
+	#If UTIL_TEMP_BUFFERS
 		Local Data:DataBuffer = New DataBuffer(DataSize)
 		Local DataLength:= DataSize ' Data.Length()
 		
 		' Read from the input-stream, then write to the output-stream:
-		InputStream.Read(Data, 0, DataLength)
-		OutputStream.Write(Data, 0, DataLength)
+		InputStream.ReadAll(Data, 0, DataLength)
+		OutputStream.WriteAll(Data, 0, DataLength)
 		
 		Data.Discard()
 	#Else
@@ -475,6 +446,12 @@ Function PrintColor:Void(Pixel:UInt, Encoding:String="ARGB")
 	Return
 End
 
+Function PrintColor:Void(S:Stream, Pixel:UInt, Encoding:String="ARGB")
+	S.WriteLine(ColorToString(Pixel, Encoding))
+	
+	Return
+End
+
 ' This is just a wrapper for the main implementation:
 Function PushSeed:Bool()
 	Return PushSeed(Seed)
@@ -574,76 +551,20 @@ Function RandomNumber:Double(Low:Double, High:Double)
 	Return Number
 End
 
-' This command writes a standard line to a 'Stream'.
-' This supports both 'LF', and 'CRLF' line endings currently, and this can be configured with 'UTIL_WRITELINE_ENDTYPE'.
-' Though character encoding is supported with this, only ASCII is supported by 'ReadLine'.
 Function WriteLine:Bool(S:Stream, Line:String, CharacterEncoding:String="ascii")
 	' Check for errors:
 	If (S = Null) Then
 		Return False
 	Endif
 	
-	S.WriteString(Line, CharacterEncoding)
-	
-	#If UTIL_WRITELINE_ENDTYPE = "CRLF"
-		S.WriteByte(ASCII_CARRIAGE_RETURN)
-	#End
-	
-	S.WriteByte(ASCII_LINE_FEED)
+	S.WriteLine(S, Line, CharacterEncoding)
 	
 	' Return the default response.
 	Return True
 End
 
-' This command reads a standard line from a 'Stream'. (This supports both 'LF', and 'CRLF' line endings currently)
-' In addition, only 'ASCII' is currently supported.
 Function ReadLine:String(S:Stream)
-	' Local variable(s):
-	Local Position:= S.Position()
-	Local Padding:ULong = 0 ' * SizeOf_Char
-	
-	Local Str:String
-	
-	#If Not UTIL_READ_LINES_QUICKLY
-		Local Size:ULong = 0
-	#End
-	
-	While (Not S.Eof())
-		Local Char:= S.ReadByte()
-		
-		If (Char <> ASCII_LINE_FEED) Then
-			If (Char <> ASCII_CARRIAGE_RETURN) Then
-				#If UTIL_READ_LINES_QUICKLY
-					Str += String.FromChar(Char)
-				#Else
-					Size += 1
-				#End
-			Else
-				Padding = 2*SizeOf_Char
-			Endif
-		Else
-			#Rem
-				If (Padding = 0) Then
-					Padding = 1
-				Endif
-			#End
-			
-			Padding = Max(Padding, 1*SizeOf_Char)
-			
-			Exit
-		Endif
-	Wend
-	
-	#If Not UTIL_READ_LINES_QUICKLY
-		S.Seek(Position)
-		
-		Str = S.ReadString(Size, "ascii")
-		
-		S.Seek(S.Position()+Padding)
-	#End
-	
-	' Return the string we read from the stream.
-	Return Str
+	Return S.ReadLine()
 End
 
 Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Long=AUTOMATIC_LENGTH, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)
@@ -1414,10 +1335,13 @@ Class GenericUtilities<T>
 		End
 	#End
 	
-	' Constructor(s):
+	' Constructor(s) (Private):
+	Private
 	
 	' DO NOT CREATE NEW INSTANCES OF THIS CLASS.
 	Method New()
 		DebugError("This class should not be used in this was.")
 	End
+	
+	Public
 End
