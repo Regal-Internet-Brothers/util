@@ -9,6 +9,8 @@ Public
 #UTIL_TEMP_BUFFERS = True
 #UTIL_WRAP_BOTH_WAYS = True
 
+'#UTIL_CONSOLE = True
+
 '#UTIL_DELEGATE_TYPETOOL = False
 '#UTIL_TYPECODE_STRINGS_USE_SHORTHAND = False
 '#UTIL_PREPROCESSOR_FIXES = False ' True
@@ -33,28 +35,30 @@ Import external
 Import fallbacks
 
 ' Default imports:
-Import autostream
-Import byteorder
-Import imagedimensions
-Import retrostrings
-Import stringutil
-Import boxutil
-Import vector
-Import sizeof
-Import time
+Import regal.autostream
+Import regal.byteorder
+Import regal.imagedimensions
+Import regal.retrostrings
+Import regal.stringutil
+Import regal.boxutil
+Import regal.vector
+Import regal.sizeof
+Import regal.time
 
 #If Not BRL_GAMETARGET_IMPLEMENTED
-	Import mojoemulator
+	Import regal.mojoemulator
 #End
 
 ' Optional (Closed source):
-Import console
+#If UTIL_CONSOLE ' CONSOLE_IMPLEMENTED
+	Import console
+#End
 
 ' Imports (Private):
 Private
 
 ' Unofficial:
-Import ioelement
+Import regal.ioelement
 
 ' Official:
 
@@ -75,7 +79,7 @@ Public
 	Private
 #End
 
-Import typetool
+Import regal.typetool
 
 #If Not UTIL_DELEGATE_TYPETOOL
 	Public

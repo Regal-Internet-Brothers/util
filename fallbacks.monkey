@@ -21,7 +21,7 @@ Public
 #End
 
 ' Imports (Public) (Monkey):
-Import typetool
+Import regal.typetool
 
 Import external
 
