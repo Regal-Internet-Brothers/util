@@ -932,12 +932,9 @@ Class GenericUtilities<T>
 		Return S.ReadString(Length, Encoding)
 	End
 	
-	' By default, this command will add the 'Offset' argument to the processed version of the 'Length' argument.
-	' To disable this, set 'ApplyOffsetToLength' to 'False'.
-	Function AsString:String(Input:T[], Offset:ULong=0, Length:Long=AUTO, AddSpaces:Bool=True, ApplyOffsetToLength:Bool=True)
-		' Local variable(s):
-		Local Output:String = LeftBracket
-		
+	' By default, this command will add the 'Offset' argument to a processed version of the 'Length' argument.
+	' To disable this, set the 'ApplyOffsetToLength' argument to 'False'.
+	Function AsString:String(Input:T[], Offset:ULong=0, Length:Long, AddSpaces:Bool=True, ApplyOffsetToLength:Bool=True)
 		' If no length was specified, use the array's length:
 		If (Length = AUTO) Then
 			Length = Input.Length()
@@ -952,18 +949,27 @@ Class GenericUtilities<T>
 		Endif
 		
 		If (VirtualLength > 0) Then
+			Local Output:String = LeftBracket
 			Local FinalIndex:= (VirtualLength - 1)
 
 			For Local Index:= Offset Until FinalIndex
-				Output += String(Input[Index]) + ", "
+				Output += String(Input[Index])
+
+				If (AddSpaces) Then
+					Output += ", " ' + Comma + Space
+				Else
+					Output += "," ' + Comma
+				Endif
 			Next
 
-			Output + Input[FinalIndex] + "]" ' + RightBracket
-			
-			Return Output
-		Else
-
+			Return Output + Input[FinalIndex] + "]" ' + RightBracket
 		Endif
+
+		Return ""
+	End
+
+	Function AsString:String(Input:T[], Offset:ULong=0, AddSpaces:Bool=True, ApplyOffsetToLength:Bool=True)
+		Return AsString(Input, Offset, Input.Length, AddSpaces, ApplyOffsetToLength)
 	End
 	
 	Function CopyStringToArray:T[](Input:String, Output:T[], Offset:ULong=0, Length:Long=AUTO)
