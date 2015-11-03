@@ -922,12 +922,13 @@ Class GenericUtilities<T>
 		Return BoolToString(Input)
 	End
 	
+	' This command reads a string from the entire contents of 'S'.
+	Function AsString:String(S:Stream, Encoding:String="utf8")
+		Return S.ReadString(Encoding)
+	End
+
 	' This command reads a string from a standard 'Stream' object.
-	Function AsString:String(S:Stream, Length:Long=AUTO, Encoding:String="utf8")
-		If (Length = AUTO) Then
-			Length = S.Length()
-		Endif
-		
+	Function AsString:String(S:Stream, Length:Long, Encoding:String="utf8") ' Int
 		Return S.ReadString(Length, Encoding)
 	End
 	
@@ -950,19 +951,19 @@ Class GenericUtilities<T>
 			VirtualLength = Length
 		Endif
 		
-		For Local Index:= Offset Until VirtualLength
-			Output += String(Input[Index])
+		If (VirtualLength > 0) Then
+			Local FinalIndex:= (VirtualLength - 1)
+
+			For Local Index:= Offset Until FinalIndex
+				Output += String(Input[Index]) + ", "
+			Next
+
+			Output + Input[FinalIndex] + "]" ' + RightBracket
 			
-			If (Index+1 < VirtualLength) Then
-				If (AddSpaces) Then
-					Output += (Comma + Space) ' ", "
-				Else
-					Output += Comma
-				Endif
-			Endif
-		Next
-		
-		Return Output + RightBracket
+			Return Output
+		Else
+
+		Endif
 	End
 	
 	Function CopyStringToArray:T[](Input:String, Output:T[], Offset:ULong=0, Length:Long=AUTO)
