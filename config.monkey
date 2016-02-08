@@ -1,0 +1,14 @@
+Strict
+
+Public
+
+' Preprocessor related:
+#UTIL_IMPLEMENTED = True
+#UTIL_TEMP_BUFFERS = True
+
+'#UTIL_CONSOLE = True
+'#UTIL_PREPROCESSOR_FIXES = False ' True
+
+#If IOELEMENT_IMPLEMENTED
+	#UTIL_SUPPORT_IOELEMENTS = True
+#End

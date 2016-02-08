@@ -2,8 +2,17 @@ Strict
 
 Public
 
-' Imports:
+' Imports (Public):
 Import meta
+
+' Imports (Private):
+Private
+
+Import regal.ioelement
+
+Import brl.stream
+
+Public
 
 ' Functions (Private):
 Private

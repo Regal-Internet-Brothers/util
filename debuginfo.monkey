@@ -2,8 +2,35 @@ Strict
 
 Public
 
-' Imports:
+' Preprocessor related:
+#If CONFIG = "debug"
+	#DEBUG_PRINT = True
+#Else
+	#DEBUG_PRINT = False
+#End
+
+#If CONFIG = "release"
+	#DEBUG_PRINT_ON_ERROR = True
+#Else
+	#DEBUG_PRINT_ON_ERROR = False
+#End
+
+#DEBUG_PRINT_QUOTES = False
+
+' Imports (Public):
+' Nothing so far.
+
+' Imports (Private):
+Private
+
+' Optional (Closed source):
+#If UTIL_CONSOLE ' CONSOLE_IMPLEMENTED
+	Import console
+#End
+
 Import monkey.lang
+
+Public
 
 ' Global variable(s):
 #If CONSOLE_IMPLEMENTED

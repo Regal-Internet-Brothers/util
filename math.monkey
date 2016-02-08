@@ -2,6 +2,9 @@ Strict
 
 Public
 
+' Preprocessor related:
+#UTIL_WRAP_BOTH_WAYS = True
+
 ' Imports:
 Import monkey.math
 

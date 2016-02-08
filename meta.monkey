@@ -2,6 +2,9 @@ Strict
 
 Public
 
+' Preprocessor related:
+'#UTIL_TYPECODE_STRINGS_USE_SHORTHAND = True
+
 ' Imports:
 Import bitfield
 
