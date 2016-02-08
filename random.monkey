@@ -2,8 +2,16 @@ Strict
 
 Public
 
-' Imports:
+' Imports (Public):
 Import monkey.random
+
+' Imports (Private):
+Private
+
+Import regal.time
+Import regal.typetool
+
+Public
 
 ' Global variable(s):
 

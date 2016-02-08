@@ -48,7 +48,7 @@ Function Transfer:Void(InputStream:Stream, OutputStream:Stream, DataSize:UInt)
 	#End
 	
 	If (InputStream = Null Or OutputStream = Null) Then
-		Throw New StreamUnavailableException(Null, DataSize)
+		Throw New StreamUnavailableException()
 	End
 	
 	' Local variable(s):
@@ -76,8 +76,7 @@ Function Transfer:Void(InputStream:Stream, OutputStream:Stream, DataSize:UInt)
 		Next
 	#End
 	
-	' Return the default response.
-	Return True
+	Return
 End
 
 Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Long=AUTOMATIC_LENGTH, CopyData:Bool=True, DiscardOldBuffer:Bool=False, OnlyWhenDifferentSizes:Bool=False)

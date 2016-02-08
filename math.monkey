@@ -5,11 +5,18 @@ Public
 ' Preprocessor related:
 #UTIL_WRAP_BOTH_WAYS = True
 
-' Imports:
+' Imports (Public):
 Import monkey.math
 
 Import bitfield
 Import random
+
+' Imports (Private):
+Private
+
+Import regal.typetool
+
+Public
 
 ' Functions:
 Function Sq:Double(Input:Double)

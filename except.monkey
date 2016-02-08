@@ -31,7 +31,7 @@ Class AllocationException Extends Throwable
 End
 
 ' This is used to catch (And throw) specific allocation exceptions.
-Class BulkAllocationException<ContainerType> Extends Throwable
+Class BulkAllocationException<ContainerType> Extends AllocationException
 	' Global variable(s) (Private):
 	Private
 	

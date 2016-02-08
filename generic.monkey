@@ -8,6 +8,8 @@ Import meta
 ' Imports (Private):
 Private
 
+Import monkey.math
+
 Import regal.ioelement
 
 Import brl.stream
@@ -19,22 +21,22 @@ Private
 
 ' The following commands were created to solve auto-conversion conflicts with the standard "box" classes:
 Function Sgn:Long(I:Long)
-	Return math.Sgn(I)
+	Return monkey.math.Sgn(I)
 End
 
 Function Sgn:Double(F:Double)
-	Return math.Sgn(F)
+	Return monkey.math.Sgn(F)
 End
 
 #If Not MONKEYLANG_EXPLICIT_BOXES
 	Function Sgn:Long(IO:IntObject)
 		Return Sgn(IO.ToInt())
-		'Return math.Sgn(IO.ToInt())
+		'Return monkey.math.Sgn(IO.ToInt())
 	End
 	
 	Function Sgn:Double(FO:FloatObject)
 		Return Sgn(FO.ToFloat())
-		'Return math.Sgn(FO.ToFloat())
+		'Return monkey.math.Sgn(FO.ToFloat())
 	End
 #End
 

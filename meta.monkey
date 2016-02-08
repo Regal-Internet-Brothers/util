@@ -16,7 +16,7 @@ Alias TypeCode = Int ' Byte
 ' This acts as a general "automatic-value".
 ' This is only provided for legacy compatibility; do not
 ' use this value in code that was not built around it.
-Const UTIL_AUTO:Long = -1
+Const UTIL_AUTO:= -1
 
 ' This is for situations where the length of something can be optional.
 ' This currently mirrors 'UTIL_AUTO' and its behavior.
