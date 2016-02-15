@@ -505,7 +505,7 @@ Class GenericUtilities<T>
 	
 	' DO NOT CREATE NEW INSTANCES OF THIS CLASS.
 	Method New()
-		DebugError("This class should not be used in this was.")
+		' Nothing so far.
 	End
 	
 	Public

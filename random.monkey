@@ -54,9 +54,14 @@ Function PopSeed:Int()
 	Return Seed
 End
 
-' This command sets the randomization seed to the current up-time of the system (In milliseconds).
+' This command sets the randomization seed to the
+' current up-time of the system (In milliseconds).
+' This is only done if a valid implementation could be found.
+' In the event 'Millisecs' could not be resolved, this will do fail silently.
 Function SetSeedToUptime:Void()
-	Seed = Millisecs()
+	#If MILLISECS_IMPLEMENTED
+		Seed = Millisecs()
+	#End
 	
 	Return
 End

@@ -17,6 +17,11 @@ Public
 
 #DEBUG_PRINT_QUOTES = False
 
+' Friends:
+#If UTIL_CONSOLE
+	Friend console
+#End
+
 ' Imports (Public):
 ' Nothing so far.
 
