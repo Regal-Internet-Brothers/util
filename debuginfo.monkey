@@ -17,6 +17,8 @@ Public
 
 #DEBUG_PRINT_QUOTES = False
 
+#DEBUG_THROW_ON_ERROR = True
+
 ' Friends:
 #If UTIL_CONSOLE
 	Friend console
@@ -50,7 +52,7 @@ Const LogTemplate:String = "[INFO] {Debug}: "
 
 Public
 
-' Functions:
+' Functions (Public):
 #If CONSOLE_IMPLEMENTED
 	Function DebugBind:Bool(C:Console)
 		If (C = Null) Then Return False
@@ -115,7 +117,7 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 			#If DEBUG_PRINT_ON_ERROR
 				DebugStop()
 			#Else
-				Error(Msg)
+				EmitError(Msg)
 			#End
 		#Else
 			#If DEBUG_PRINT
@@ -133,7 +135,7 @@ Function DebugError:Void(Msg:String, StopExecution:Bool=True)
 					Endif
 				#End
 			#Else
-				Error(Msg)
+				EmitError(Msg)
 			#End
 		#End
 	Endif
@@ -151,4 +153,39 @@ Function DebugPrint:Void(Str:String="", StopExecution:Bool=False)
 	DebugError(Str, StopExecution)
 	
 	Return
+End
+
+' Functions (Private):
+Private
+
+Function EmitError:Void(Message:String)
+	#If DEBUG_THROW_ON_ERROR
+		Throw New DebugException(Message)
+	#Else
+		Error(Message)
+	#End
+	
+	Return
+End
+
+Public
+
+' Classes:
+Class DebugException Extends Throwable
+	' Constructor(s):
+	Method New(Message:String)
+		Self.Message = Message
+	End
+	
+	' Methods:
+	Method ToString:String() ' Property
+		Return Message
+	End
+	
+	' Fields (Protected):
+	Protected
+	
+	Field Message:String
+	
+	Public
 End
