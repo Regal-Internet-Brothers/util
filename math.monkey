@@ -20,11 +20,11 @@ Public
 
 ' Functions:
 Function Sq:Double(Input:Double)
-	Return Input * Input ' Pow(Input, 2.0)
+	Return (Input * Input) ' Pow(Input, 2.0)
 End
 
 Function Sq:Long(Input:Long)
-	Return Input * Input ' Pow(Input, 2)
+	Return (Input * Input) ' Pow(Input, 2)
 End
 
 #If Not MONKEYLANG_EXPLICIT_BOXES
