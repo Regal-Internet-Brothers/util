@@ -133,3 +133,9 @@ Function SetBuffer:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Byte
 	
 	Return
 End
+
+Function SetBuffer:Void(Output:DataBuffer, Bytes:Byte[], Offset:UInt=0)
+	SetBuffer(Output, Bytes, Bytes.Length, 0, Offset)
+	
+	Return
+End
