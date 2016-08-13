@@ -126,7 +126,7 @@ Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Offset:UInt=0)
 	Return
 End
 
-Function SetBuffer:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
+Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Bytes_Length
 		Output.PokeByte((I + Offset), Bytes[I + Bytes_Offset])
 	Next
@@ -134,8 +134,36 @@ Function SetBuffer:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Byte
 	Return
 End
 
-Function SetBuffer:Void(Output:DataBuffer, Bytes:Byte[], Offset:UInt=0)
-	SetBuffer(Output, Bytes, Bytes.Length, 0, Offset)
+Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Offset:UInt=0)
+	SetBytes(Output, Bytes, Bytes.Length, 0, Offset)
+	
+	Return
+End
+
+Function SetShorts:Void(Output:DataBuffer, Shorts:Short[], Shorts_Length:UInt, Shorts_Offset:UInt=0, Offset:UInt=0)
+	For Local I:= 0 Until Shorts_Length
+		Output.PokeShort((I + Offset), Shorts[I + Shorts_Offset])
+	Next
+	
+	Return
+End
+
+Function SetShorts:Void(Output:DataBuffer, Shorts:Short[], Offset:UInt=0)
+	SetShorts(Output, Shorts, Shorts.Length, 0, Offset)
+	
+	Return
+End
+
+Function SetInts:Void(Output:DataBuffer, Ints:Int[], Ints_Length:UInt, Ints_Offset:UInt=0, Offset:UInt=0)
+	For Local I:= 0 Until Ints_Length
+		Output.PokeInt((I + Offset), Ints[I + Ints_Offset])
+	Next
+	
+	Return
+End
+
+Function SetInts:Void(Output:DataBuffer, Ints:Int[], Offset:UInt=0)
+	SetInts(Output, Ints, Ints.Length, 0, Offset)
 	
 	Return
 End
