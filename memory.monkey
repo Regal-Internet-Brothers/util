@@ -121,7 +121,7 @@ Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Count:Int, Offset:Int=0)
 End
 
 Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Offset:Int=0)
-	SetBuffer(Output, Value, Output.Length, Offset)
+	SetBuffer(Output, Value, Output.Length - Offset, Offset)
 	
 	Return
 End
