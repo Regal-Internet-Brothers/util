@@ -112,7 +112,7 @@ Function ResizeBuffer:DataBuffer(Buffer:DataBuffer, Size:Long=AUTOMATIC_LENGTH, 
 	Return B
 End
 
-Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Count:Int, Offset:Int=0)
+Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Count:UInt, Offset:UInt=0)
 	For Local I:= Offset Until (Count + Offset)
 		Output.PokeByte(I, Value)
 	Next
@@ -120,8 +120,16 @@ Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Count:Int, Offset:Int=0)
 	Return
 End
 
-Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Offset:Int=0)
+Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Offset:UInt=0)
 	SetBuffer(Output, Value, Output.Length - Offset, Offset)
+	
+	Return
+End
+
+Function SetBuffer:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
+	For Local I:= 0 Until Bytes_Length
+		Output.PokeByte((I + Offset), Bytes[I + Bytes_Offset])
+	Next
 	
 	Return
 End
