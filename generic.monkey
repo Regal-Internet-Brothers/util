@@ -88,7 +88,7 @@ Class GenericUtilities<T>
 	
 	' By default, this command will add the 'Offset' argument to a processed version of the 'Length' argument.
 	' To disable this, set the 'ApplyOffsetToLength' argument to 'False'.
-	Function AsString:String(Input:T[], Offset:ULong=0, Length:Long, AddSpaces:Bool=True, ApplyOffsetToLength:Bool=True)
+	Function AsString:String(Input:T[], Offset:ULong=0, Length:Long=AUTO, AddSpaces:Bool=True, ApplyOffsetToLength:Bool=True)
 		' If no length was specified, use the array's length:
 		If (Length = AUTO) Then
 			Length = Input.Length()

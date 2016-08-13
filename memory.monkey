@@ -9,6 +9,8 @@ Import compare
 ' Imports (Private):
 Private
 
+Import regal.sizeof
+
 Import brl.stream
 Import brl.databuffer
 
@@ -128,7 +130,7 @@ End
 
 Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Bytes_Length
-		Output.PokeByte((I + Offset), Bytes[I + Bytes_Offset])
+		Output.PokeByte((I + Offset), (Bytes[I + Bytes_Offset] & $FF)) ' (I * SizeOf_Byte)
 	Next
 	
 	Return
@@ -142,7 +144,7 @@ End
 
 Function SetShorts:Void(Output:DataBuffer, Shorts:Short[], Shorts_Length:UInt, Shorts_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Shorts_Length
-		Output.PokeShort((I + Offset), Shorts[I + Shorts_Offset])
+		Output.PokeShort(((I * SizeOf_Short) + Offset), (Shorts[I + Shorts_Offset] & $FFFF))
 	Next
 	
 	Return
@@ -156,7 +158,7 @@ End
 
 Function SetInts:Void(Output:DataBuffer, Ints:Int[], Ints_Length:UInt, Ints_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Ints_Length
-		Output.PokeInt((I + Offset), Ints[I + Ints_Offset])
+		Output.PokeInt(((I * SizeOf_Integer) + Offset), (Ints[I + Ints_Offset] & $FFFFFFFF))
 	Next
 	
 	Return
