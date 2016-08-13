@@ -56,6 +56,10 @@ End
 	End
 #End
 
+Function FloatsEqual:Bool(X:Double, Y:Double, Epsilon:Double)
+	Return (Abs(X - Y) <= Epsilon)
+End
+
 Function WrapAngle:Double(A:Double)
 	#If UTIL_WRAP_BOTH_WAYS
 		Return SMod(A, 360.0)
