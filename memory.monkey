@@ -185,7 +185,7 @@ Function SetBufferBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt,
 End
 
 Function SetBufferBytes:Void(Output:DataBuffer, Bytes:Byte[], Offset:UInt=0)
-	SetBytes(Output, Bytes, Bytes.Length, 0, Offset)
+	SetBufferBytes(Output, Bytes, Bytes.Length, 0, Offset)
 	
 	Return
 End
@@ -199,7 +199,7 @@ Function SetBufferShorts:Void(Output:DataBuffer, Shorts:Short[], Shorts_Length:U
 End
 
 Function SetBufferShorts:Void(Output:DataBuffer, Shorts:Short[], Offset:UInt=0)
-	SetShorts(Output, Shorts, Shorts.Length, 0, Offset)
+	SetBufferShorts(Output, Shorts, Shorts.Length, 0, Offset)
 	
 	Return
 End
@@ -213,7 +213,7 @@ Function SetBufferInts:Void(Output:DataBuffer, Ints:Int[], Ints_Length:UInt, Int
 End
 
 Function SetBufferInts:Void(Output:DataBuffer, Ints:Int[], Offset:UInt=0)
-	SetInts(Output, Ints, Ints.Length, 0, Offset)
+	SetBufferInts(Output, Ints, Ints.Length, 0, Offset)
 	
 	Return
 End
