@@ -35,22 +35,22 @@ Function AsByte:UInt(I:UInt)
 End
 
 ' This converts an "address" (Real offset) to an index with a 2-byte stride.
-Function ToShortIndex:UInt(Address:UInt) ' FromShortIndex
+Function ToShortArrayIndex:UInt(Address:UInt)
 	Return (Address / SizeOf_Short)
 End
 
 ' This converts an "address" (Real offset) to an index with a 4-byte stride.
-Function ToIntIndex:UInt(Address:UInt)
+Function ToIntArrayIndex:UInt(Address:UInt)
 	Return (Address / SizeOf_Integer)
 End
 
 ' This converts a 2-byte stride into bytes.
-Function FromShortIndex:UInt(Index:UInt)
+Function FromShortArrayIndex:UInt(Index:UInt)
 	Return (Index * SizeOf_Short)
 End
 
 ' This converts a 4-byte stride into bytes.
-Function FromIntIndex:Uint(Index:UInt)
+Function FromIntArrayIndex:Uint(Index:UInt)
 	Return (Index * SizeOf_Integer)
 End
 
@@ -150,33 +150,33 @@ End
 
 ' This writes a 16-bit integer at the "index" specified using the input-value.
 ' The index specified has a stride of 2 bytes.
-Function SetShort:Void(Output:DataBuffer, Index:UInt, Value:UShort, Offset:UInt=0)
-	Output.PokeShort(Offset + FromShortIndex(Index), Short(Value & $FFFF))
+Function ArraySetShort:Void(Output:DataBuffer, Index:UInt, Value:UShort, Offset:UInt=0)
+	Output.PokeShort(Offset + FromShortArrayIndex(Index), Short(Value & $FFFF))
 	
 	Return
 End
 
 ' This writes a 32-bit integer at the "index" specified using the input-value.
 ' The index specified has a stride of 4 bytes.
-Function SetInt:Void(Output:DataBuffer, Index:UInt, Value:UInt, Offset:UInt=0)
-	Output.PokeInt(Offset + FromIntIndex(Index), Int(Value & $FFFFFFFF))
+Function ArraySetInt:Void(Output:DataBuffer, Index:UInt, Value:UInt, Offset:UInt=0)
+	Output.PokeInt(Offset + FromIntArrayIndex(Index), Int(Value & $FFFFFFFF))
 	
 	Return
 End
 
 ' This reads a 16-bit integer at the "index" specified.
 ' The index specified has a stride of 2 bytes.
-Function GetShort:UShort(Input:DataBuffer, Index:UInt, Offset:UInt=0)
-	Return (Input.PeekShort(Offset + FromShortIndex(Index)) & $FFFF)
+Function ArrayGetShort:UShort(Input:DataBuffer, Index:UInt, Offset:UInt=0)
+	Return (Input.PeekShort(Offset + FromShortArrayIndex(Index)) & $FFFF)
 End
 
 ' This reads a 32-bit integer at the "index" specified.
 ' The index specified has a stride of 4 bytes.
-Function GetInt:UInt(Input:DataBuffer, Index:UInt, Offset:UInt=0)
-	Return (Input.PeekInt(Offset + FromIntIndex(Index)) & $FFFFFFFF)
+Function ArrayGetInt:UInt(Input:DataBuffer, Index:UInt, Offset:UInt=0)
+	Return (Input.PeekInt(Offset + FromIntArrayIndex(Index)) & $FFFFFFFF)
 End
 
-Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
+Function SetBufferBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Bytes_Length
 		Output.PokeByte((I + Offset), (Bytes[I + Bytes_Offset] & $FF)) ' (I * SizeOf_Byte)
 	Next
@@ -184,13 +184,13 @@ Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes
 	Return
 End
 
-Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Offset:UInt=0)
+Function SetBufferBytes:Void(Output:DataBuffer, Bytes:Byte[], Offset:UInt=0)
 	SetBytes(Output, Bytes, Bytes.Length, 0, Offset)
 	
 	Return
 End
 
-Function SetShorts:Void(Output:DataBuffer, Shorts:Short[], Shorts_Length:UInt, Shorts_Offset:UInt=0, Offset:UInt=0)
+Function SetBufferShorts:Void(Output:DataBuffer, Shorts:Short[], Shorts_Length:UInt, Shorts_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Shorts_Length
 		Output.PokeShort(((I * SizeOf_Short) + Offset), (Shorts[I + Shorts_Offset] & $FFFF))
 	Next
@@ -198,13 +198,13 @@ Function SetShorts:Void(Output:DataBuffer, Shorts:Short[], Shorts_Length:UInt, S
 	Return
 End
 
-Function SetShorts:Void(Output:DataBuffer, Shorts:Short[], Offset:UInt=0)
+Function SetBufferShorts:Void(Output:DataBuffer, Shorts:Short[], Offset:UInt=0)
 	SetShorts(Output, Shorts, Shorts.Length, 0, Offset)
 	
 	Return
 End
 
-Function SetInts:Void(Output:DataBuffer, Ints:Int[], Ints_Length:UInt, Ints_Offset:UInt=0, Offset:UInt=0)
+Function SetBufferInts:Void(Output:DataBuffer, Ints:Int[], Ints_Length:UInt, Ints_Offset:UInt=0, Offset:UInt=0)
 	For Local I:= 0 Until Ints_Length
 		Output.PokeInt(((I * SizeOf_Integer) + Offset), (Ints[I + Ints_Offset] & $FFFFFFFF))
 	Next
@@ -212,7 +212,7 @@ Function SetInts:Void(Output:DataBuffer, Ints:Int[], Ints_Length:UInt, Ints_Offs
 	Return
 End
 
-Function SetInts:Void(Output:DataBuffer, Ints:Int[], Offset:UInt=0)
+Function SetBufferInts:Void(Output:DataBuffer, Ints:Int[], Offset:UInt=0)
 	SetInts(Output, Ints, Ints.Length, 0, Offset)
 	
 	Return
