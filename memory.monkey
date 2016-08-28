@@ -31,7 +31,27 @@ End
 
 ' This command is little-endian only:
 Function AsByte:UInt(I:UInt)
-	Return ((I Shl 24) Shr 24)
+	Return ((I Shl 24) Shr 24) ' (I & $FF)
+End
+
+' This converts an "address" (Real offset) to an index with a 2-byte stride.
+Function ToShortIndex:UInt(Address:UInt) ' FromShortIndex
+	Return (Address / SizeOf_Short)
+End
+
+' This converts an "address" (Real offset) to an index with a 4-byte stride.
+Function ToIntIndex:UInt(Address:UInt)
+	Return (Address / SizeOf_Integer)
+End
+
+' This converts a 2-byte stride into bytes.
+Function FromShortIndex:UInt(Index:UInt)
+	Return (Index * SizeOf_Short)
+End
+
+' This converts a 4-byte stride into bytes.
+Function FromIntIndex:Uint(Index:UInt)
+	Return (Index * SizeOf_Integer)
 End
 
 ' This command is useful when dealing with arrays.
@@ -126,6 +146,34 @@ Function SetBuffer:Void(Output:DataBuffer, Value:Byte, Offset:UInt=0)
 	SetBuffer(Output, Value, Output.Length - Offset, Offset)
 	
 	Return
+End
+
+' This writes a 16-bit integer at the "index" specified using the input-value.
+' The index specified has a stride of 2 bytes.
+Function SetShort:Void(Output:DataBuffer, Index:UInt, Value:UShort, Offset:UInt=0)
+	Output.PokeShort(Offset + FromShortIndex(Index), Short(Value & $FFFF))
+	
+	Return
+End
+
+' This writes a 32-bit integer at the "index" specified using the input-value.
+' The index specified has a stride of 4 bytes.
+Function SetInt:Void(Output:DataBuffer, Index:UInt, Value:UInt, Offset:UInt=0)
+	Output.PokeInt(Offset + FromIntIndex(Index), Int(Value & $FFFFFFFF))
+	
+	Return
+End
+
+' This reads a 16-bit integer at the "index" specified.
+' The index specified has a stride of 2 bytes.
+Function GetShort:UShort(Input:DataBuffer, Index:UInt, Offset:UInt=0)
+	Return (Input.PeekShort(Offset + FromShortIndex(Index)) & $FFFF)
+End
+
+' This reads a 32-bit integer at the "index" specified.
+' The index specified has a stride of 4 bytes.
+Function GetInt:UInt(Input:DataBuffer, Index:UInt, Offset:UInt=0)
+	Return (Input.PeekInt(Offset + FromIntIndex(Index)) & $FFFFFFFF)
 End
 
 Function SetBytes:Void(Output:DataBuffer, Bytes:Byte[], Bytes_Length:UInt, Bytes_Offset:UInt=0, Offset:UInt=0)
