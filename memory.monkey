@@ -50,7 +50,7 @@ Function FromShortArrayIndex:UInt(Index:UInt)
 End
 
 ' This converts a 4-byte stride into bytes.
-Function FromIntArrayIndex:Uint(Index:UInt)
+Function FromIntArrayIndex:UInt(Index:UInt)
 	Return (Index * SizeOf_Integer)
 End
 
