@@ -133,6 +133,15 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return True
 	End
 	
+	Method SetArray:Bool(Index:UInt, Input:ValueType[])
+		Return SetArray(Index, Input, Input.Length)
+	End
+	
+	' TODO: Optimize this overload to bypass index conversion.
+	Method SetArray:Bool(Input:ValueType[])
+		Return SetArray(0, Input)
+	End
+	
 	Method Add:ValueType(Index:UInt, Value:ValueType)
 		Local Result:= (Get(Index) + Value)
 		
