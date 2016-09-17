@@ -80,19 +80,21 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method GetArray:Bool(Index:UInt, Output:ValueType[], Count:UInt, OutputOffset:UInt=0)
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
-		If (Bounds > Size) Then
+		If (ByteBounds > Size) Then
 			Return False
 		Endif
 		
-		'PeekInts : Void ( address:Int, ints:Int[], offset:Int, count:Int )
-		
 		Local OutputPosition:= OutputOffset
 		
-		For Local Address:= OffsetIndexToAddress(Index) Until ByteBounds Step ElementSize
+		Local Address:= OffsetIndexToAddress(Index)
+		
+		While (Address < ByteBounds)
 			Output[OutputPosition] = GetRaw(Address)
 			
 			OutputPosition += 1
-		Next
+			
+			Address += ElementSize
+		Wend
 		
 		' Return the default response.
 		Return True
@@ -106,6 +108,29 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Endif
 		
 		Return Output
+	End
+	
+	Method SetArray:Bool(Index:UInt, Input:ValueType[], Count:UInt, InputOffset:UInt=0)
+		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
+		
+		If (ByteBounds > Size) Then
+			Return False
+		Endif
+		
+		Local InputPosition:= InputOffset
+		
+		Local Address:= OffsetIndexToAddress(Index)
+		
+		While (Address < ByteBounds)
+			SetRaw(Address, Input[InputPosition])
+			
+			InputPosition += 1
+			
+			Address += ElementSize
+		Wend
+		
+		' Return the default response.
+		Return True
 	End
 	
 	Method Add:ValueType(Index:UInt, Value:ValueType)

@@ -23,7 +23,7 @@ Function Main:Int()
 	
 	Print("")
 	
-	Print("Storing the value '" + Value + "' at index " + Index)
+	Print("Storing the value '" + Value + "' at index " + Index + ".")
 	
 	Buffer.Set(Index, Value)
 	
@@ -33,7 +33,7 @@ Function Main:Int()
 	
 	Print(RetValue)
 	
-	Print("~n") ' Two lines.
+	Print("")
 	
 	If (Value = RetValue) Then
 		Print("| Both values match. |")
@@ -43,12 +43,40 @@ Function Main:Int()
 		Print("\\ {" + String(Value) + " vs. " + String(RetValue) + "} //")
 	Endif
 	
-	Print("Squaring the value stored at index " + Index + ":")
+	Print("~nSquaring the value stored at index " + Index + ":")
 	
 	Local Current:= Buffer.Get(Index)
 	Local Square:= Buffer.Sq(Index)
 	
 	Print(String(Current) + " -> " + String(Square))
+	
+	Local NewData:= New Int[Buffer.Length] ' 0, 2, 4, 6, 8, ...
+	
+	For Local I:= 0 Until NewData.Length
+		NewData[I] = (I * 2)
+	Next
+	
+	Buffer.SetArray(0, NewData, NewData.Length)
+	
+	Local NewTestIndex:= 3
+	
+	Print("~nChecking index " + NewTestIndex + ":~n")
+	
+	Local NewValue:= NewData[NewTestIndex]
+	Local NewRetValue:= Buffer.Get(NewTestIndex)
+	Local NewRetValueAlt:= Buffer.GetArray(NewTestIndex, 1)[0]
+	
+	Print("NewData[" + NewTestIndex + "] = " + NewValue)
+	Print("Buffer[" + NewTestIndex + "] = " + NewRetValue)
+	Print("Alternate access of Buffer[" + NewTestIndex + "] = " + NewRetValueAlt)
+	
+	Print("")
+	
+	If (NewValue = NewRetValue) Then
+		Print("| Both values are the same. |")
+	Else
+		Print(": The two values are different. :")
+	Endif
 	
 	Return 0
 End
