@@ -2,6 +2,12 @@ Strict
 
 Public
 
+#Rem
+	TODO:
+		* Replace uses of 'Int' and 'Float' with 'Long' and 'Double'.
+			('LongArrayView', 'DoubleArrayView', etc)
+#End
+
 ' Preprocessor related:
 #REGAL_UTIL_BUFFERS_BYTE_OPTIMIZATIONS = True
 
@@ -19,6 +25,8 @@ Import memory
 
 Import regal.sizeof
 Import regal.typetool
+
+Import monkey.math
 
 Public
 
@@ -98,6 +106,18 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Endif
 		
 		Return Output
+	End
+	
+	Method Add:ValueType(Index:UInt, Value:ValueType)
+		Local Result:= (Get(Index) + Value)
+		
+		Set(Index, Result)
+		
+		Return Result
+	End
+	
+	Method Subtract:ValueType(Index:UInt, Value:ValueType)
+		Return Add(Index, -Value)
 	End
 	
 	' This supplies the raw size of 'Count' elements in bytes.
@@ -238,7 +258,64 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Public
 End
 
-Class IntArrayView Extends ArrayView<Int> ' ArrayView<Long> ' Int ' LongArrayView
+Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
+	' Constructor(s):
+	Method New(ElementSize:UInt, Count:UInt, __Direct:Bool=False)
+		Super.New(ElementSize, Count, __Direct)
+	End
+	
+	Method New(ElementSize:UInt, Data:DataBuffer, OffsetInBytes:UInt=0)
+		Super.New(ElementSize, Data, OffsetInBytes)
+	End
+	
+	Method New(ElementSize:UInt, View:BufferView, ExtraOffset:UInt=0)
+		Super.New(ElementSize, View, ExtraOffset)
+	End
+	
+	' Methods:
+	Method Increment:ValueType(Index:UInt)
+		Return Add(Index, ValueType(1))
+	End
+	
+	Method Decrement:ValueType(Index:UInt)
+		Return Subtract(Index, ValueType(1))
+	End
+	
+	Method Multiply:ValueType(Index:UInt, Value:ValueType)
+		Local Result:= (Get(Index) * Value)
+		
+		Set(Index, Result)
+		
+		Return Result
+	End
+	
+	Method Divide:ValueType(Index:UInt, Value:ValueType)
+		Local Result:= (Get(Index) / Value)
+		
+		Set(Index, Result)
+		
+		Return Result
+	End
+	
+	Method Sq:ValueType(Index:UInt) ' Square
+		Local Value:= Get(Index)
+		Local Result:= (Value * Value)
+		
+		Set(Index, Result)
+		
+		Return Result
+	End
+	
+	Method Sqrt:ValueType(Index:UInt) ' SquareRoot
+		Local Result:= Sqrt(Get(Index))
+		
+		Set(Index, Result)
+		
+		Return Result
+	End
+End
+
+Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArrayView
 	' Constant variable(s):
 	Const Type_Size:= SizeOf_Integer ' 4
 	
@@ -273,6 +350,11 @@ Class IntArrayView Extends ArrayView<Int> ' ArrayView<Long> ' Int ' LongArrayVie
 	'#End
 	
 	Public
+	
+	' Methods (Public):
+	Method GetUnsigned:Int(Index:UInt)
+		Return (Get(Index) & $FFFFFFFF)
+	End
 	
 	' Methods (Protected):
 	Protected
@@ -325,6 +407,11 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 	'#End
 	
 	Public
+	
+	' Methods (Public):
+	Method GetUnsigned:Int(Index:UInt) ' Short
+		Return (Get(Index) & $FFFF)
+	End
 	
 	' Methods (Protected):
 	Protected
@@ -383,6 +470,10 @@ Class ByteArrayView Extends ShortArrayView ' ArrayView<Int> ' Byte
 		#End
 	#End
 	
+	Method GetUnsigned:Int(Address:UInt) ' Byte
+		Return (Get(Address) & $FF)
+	End
+	
 	' Methods (Protected):
 	Protected
 	
@@ -399,7 +490,7 @@ Class ByteArrayView Extends ShortArrayView ' ArrayView<Int> ' Byte
 	Public
 End
 
-Class FloatArrayView Extends ArrayView<Float> ' DoubleArrayView
+Class FloatArrayView Extends MathArrayView<Float> ' DoubleArrayView
 	' Constant variable(s):
 	Const Type_Size:= SizeOf_Float ' 4 ' 8
 	

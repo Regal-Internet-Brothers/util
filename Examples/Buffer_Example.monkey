@@ -43,5 +43,12 @@ Function Main:Int()
 		Print("\\ {" + String(Value) + " vs. " + String(RetValue) + "} //")
 	Endif
 	
+	Print("Squaring the value stored at index " + Index + ":")
+	
+	Local Current:= Buffer.Get(Index)
+	Local Square:= Buffer.Sq(Index)
+	
+	Print(String(Current) + " -> " + String(Square))
+	
 	Return 0
 End
