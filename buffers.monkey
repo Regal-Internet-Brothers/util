@@ -258,6 +258,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Public
 End
 
+' This is an intermediate class which defines mathematical routines for both integral and floating-point types.
 Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
 	' Constructor(s):
 	Method New(ElementSize:UInt, Count:UInt, __Direct:Bool=False)
@@ -273,14 +274,19 @@ Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
 	End
 	
 	' Methods:
+	
+	' This increments the value located at 'Index' by one.
 	Method Increment:ValueType(Index:UInt)
 		Return Add(Index, ValueType(1))
 	End
 	
+	' This decrements the value located at 'Index' by one.
 	Method Decrement:ValueType(Index:UInt)
 		Return Subtract(Index, ValueType(1))
 	End
 	
+	' This multiplies the value located at 'Index' using the value specified.
+	' The result is written into memory, then returned.
 	Method Multiply:ValueType(Index:UInt, Value:ValueType)
 		Local Result:= (Get(Index) * Value)
 		
@@ -289,6 +295,8 @@ Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
 		Return Result
 	End
 	
+	' This divides the value located at 'Index' using the value specified.
+	' The result is written into memory, then returned.
 	Method Divide:ValueType(Index:UInt, Value:ValueType)
 		Local Result:= (Get(Index) / Value)
 		
@@ -297,6 +305,9 @@ Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
 		Return Result
 	End
 	
+	' This squares the value located at 'Index'.
+	' The result is both returned by the method, and
+	' written into memory at the specified location.
 	Method Sq:ValueType(Index:UInt) ' Square
 		Local Value:= Get(Index)
 		Local Result:= (Value * Value)
@@ -306,6 +317,9 @@ Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
 		Return Result
 	End
 	
+	' This calculates the square-root of the value located at 'Index'.
+	' The result is both returned by this method, and
+	' written into memory at the specified location.
 	Method Sqrt:ValueType(Index:UInt) ' SquareRoot
 		Local Result:= Sqrt(Get(Index))
 		
@@ -334,8 +348,7 @@ Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArra
 	
 	' Constructor(s) (Protected):
 	Protected
-
-	'#Rem
+	
 	Method New(Type_Size:UInt, Count:UInt, __Direct:Bool=False)
 		Super.New(Type_Size, Count, __Direct)
 	End
@@ -347,7 +360,6 @@ Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArra
 	Method New(Type_Size:UInt, View:BufferView, ExtraOffset:UInt=0)
 		Super.New(Type_Size, View, ExtraOffset)
 	End
-	'#End
 	
 	Public
 	
@@ -391,8 +403,7 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 	
 	' Constructor(s) (Protected):
 	Protected
-
-	'#Rem
+	
 	Method New(Type_Size:UInt, Count:UInt, __Direct:Bool=False)
 		Super.New(Type_Size, Count, __Direct)
 	End
@@ -404,7 +415,6 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 	Method New(Type_Size:UInt, View:BufferView, ExtraOffset:UInt=0)
 		Super.New(Type_Size, View, ExtraOffset)
 	End
-	'#End
 	
 	Public
 	
