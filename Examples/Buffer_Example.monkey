@@ -3,7 +3,7 @@ Strict
 Public
 
 ' Imports:
-Import regal.util.buffers
+Import regal.util.bufferview
 Import regal.util.meta
 Import regal.sizeof
 
