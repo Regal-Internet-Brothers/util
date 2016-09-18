@@ -402,6 +402,12 @@ Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArra
 		Return (Get(Index) & $FFFFFFFF)
 	End
 	
+	Method SetUnsigned:Void(Index:UInt, Value:Int)
+		Set(Index, (Value & $FFFFFFFF))
+		
+		Return
+	End
+	
 	' Methods (Protected):
 	Protected
 	
@@ -455,6 +461,12 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 	' Methods (Public):
 	Method GetUnsigned:Int(Index:UInt) ' Short
 		Return (Get(Index) & $FFFF)
+	End
+	
+	Method SetUnsigned:Void(Index:UInt, Value:Int) ' Short
+		Set(Index, (Value & $FFFF))
+		
+		Return
 	End
 	
 	' Methods (Protected):
@@ -516,6 +528,12 @@ Class ByteArrayView Extends ShortArrayView ' ArrayView<Int> ' Byte
 	
 	Method GetUnsigned:Int(Address:UInt) ' Byte
 		Return (Get(Address) & $FF)
+	End
+	
+	Method SetUnsigned:Void(Index:UInt, Value:Int) ' Byte
+		Set(Index, (Value & $FF))
+		
+		Return
 	End
 	
 	' Methods (Protected):
