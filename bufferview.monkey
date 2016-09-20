@@ -42,8 +42,12 @@ End
 
 ' Classes:
 Class ArrayView<ValueType> Implements BufferView Abstract
-	' Global variable(s):
+	' Global variable(s) (Protected):
+	Protected
+	
 	Global NIL:ValueType
+	
+	Public
 	
 	' Constructor(s):
 	Method New(ElementSize:UInt, Count:UInt, __Direct:Bool=False)
@@ -120,13 +124,14 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Local InputPosition:= InputOffset
 		
 		Local Address:= OffsetIndexToAddress(Index)
+		Local Stride:= ElementSize
 		
 		While (Address < ByteBounds)
 			SetRaw(Address, Input[InputPosition])
 			
 			InputPosition += 1
 			
-			Address += ElementSize
+			Address += Stride
 		Wend
 		
 		' Return the default response.
@@ -140,6 +145,31 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	' TODO: Optimize this overload to bypass index conversion.
 	Method SetArray:Bool(Input:ValueType[])
 		Return SetArray(0, Input)
+	End
+	
+	Method Clear:Bool(Index:UInt, Count:UInt)
+		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
+		
+		If (ByteBounds > Size) Then
+			Return False
+		Endif
+		
+		Local Address:= OffsetIndexToAddress(Index)
+		Local Stride:= ElementSize
+		
+		While (Address < ByteBounds)
+			ClearRaw(Address)
+			
+			Address += Stride
+		Wend
+		
+		' Return the default response.
+		Return True
+	End
+	
+	' TODO: Optimize this overload to bypass either index conversion or standard assignment.
+	Method Clear:Bool()
+		Return Clear(0, Length)
 	End
 	
 	Method Add:ValueType(Index:UInt, Value:ValueType)
@@ -219,6 +249,13 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	' The i
 	Method GetRaw:ValueType(Address:UInt) Abstract
 	Method SetRaw:Void(Address:UInt, Value:ValueType) Abstract
+	
+	' Implemented:
+	Method ClearRaw:Void(Address:UInt)
+		SetRaw(Address, NIL)
+		
+		Return
+	End
 	
 	Public
 	
