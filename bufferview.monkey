@@ -9,10 +9,12 @@ Public
 #End
 
 ' Preprocessor related:
-#REGAL_UTIL_BUFFERS_BYTE_OPTIMIZATIONS = True
+#REGAL_UTIL_BUFFERVIEW = True
+
+#REGAL_UTIL_BUFFERVIEW_BYTE_OPTIMIZATIONS = True
 
 '#If CONFIG = "debug"
-	'#REGAL_UTIL_BUFFERS_SAFE = True
+	'#REGAL_UTIL_BUFFERVIEW_SAFE = True
 '#End
 
 ' Imports (Public):
@@ -32,6 +34,9 @@ Public
 
 ' Interfaces:
 Interface BufferView
+	' Constant variable(s):
+	Const MAX_VIEW_ELEMENTS:= 0 ' -1
+	
 	' Methods:
 	' Nothing so far.
 	
@@ -42,6 +47,9 @@ End
 
 ' Classes:
 Class ArrayView<ValueType> Implements BufferView Abstract
+	' Constant variable(s) (Public):
+	Const MAX_VIEW_ELEMENTS:= BufferView.MAX_VIEW_ELEMENTS
+	
 	' Global variable(s) (Protected):
 	Protected
 	
@@ -49,24 +57,76 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	Public
 	
-	' Constructor(s):
-	Method New(ElementSize:UInt, Count:UInt, __Direct:Bool=False)
+	' Constructor(s) (Public):
+	
+	#Rem
+		NOTES:
+			* The 'ElementCount' argument(s) is/are bound by the amount of memory given to the view.
+				This means the segment of a buffer that you intend to map must be at least the
+				length you specify, scaled according to the requested size for each element.
+				
+				An invalid size will result in an exception.
+	#End
+	
+	Method New(ElementSize:UInt, ElementCount:UInt, __Direct:Bool=False)
 		Self.ElementSize = ElementSize
-		Self.Data = New DataBuffer(CountInBytes(Count), __Direct)
+		
+		InitializeCustomBuffer(ElementSize, ElementCount, __Direct)
 	End
 	
-	Method New(ElementSize:UInt, Data:DataBuffer, OffsetInBytes:UInt=0)
+	Method New(ElementSize:UInt, Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
 		Self.Offset = OffsetInBytes
 		Self.ElementSize = ElementSize
 		Self.Data = Data
+		
+		Self.RawSize = GetRawSize(Data, ElementSize, ElementCount)
 	End
 	
 	' The 'ExtraOffset' argument is used to offset from the 'View' object's offset.
-	Method New(ElementSize:UInt, View:BufferView, ExtraOffset:UInt=0)
+	Method New(ElementSize:UInt, View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
 		Self.ElementSize = ElementSize
+		
 		Self.Offset = (View.Offset + ExtraOffset)
+		
 		Self.Data = View.Data
+		
+		Self.RawSize = GetRawSize(Self.Data, ElementSize, ElementCount)
 	End
+	
+	' Constructor(s) (Private):
+	Private
+	
+	Method GetRawSize:UInt(Data:DataBuffer, ElementSize:UInt, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		If (ElementCount = MAX_VIEW_ELEMENTS) Then
+			Return Data.Length
+		Endif
+		
+		Local IntendedSize:= (ElementCount * ElementSize) ' CountInBytes(ElementCount)
+		
+		' Make sure the intended size is correct.
+		If (IntendedSize < ElementSize Or IntendedSize > Data.Length) Then
+			' The intended size is either too large, or too small.
+			Throw New InvalidViewMappingOperation(Self, Offset, IntendedSize)
+		Endif
+		
+		Return IntendedSize
+	End
+	
+	' NOTE: It is considered unsafe to call this constructor before assigning a value to the 'ElementSize' property.
+	Method InitializeCustomBuffer:Void(ElementSize:UInt, ElementCount:UInt, __Direct:Bool=False) Final
+		If (ElementSize = 0 Or ElementCount = 0) Then
+			Throw New BulkAllocationException<BufferView>(Self, 0) ' IntendedSize
+		Endif
+		
+		Local IntendedSize:= (ElementCount * ElementSize)
+		
+		Self.Data = New DataBuffer(IntendedSize, __Direct) ' CountInBytes(ElementCount)
+		
+		Self.Offset = 0
+		Self.RawSize = Self.Data.Length
+	End
+	
+	Public
 	
 	' Methods (Public):
 	
@@ -81,6 +141,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return
 	End
 	
+	' This returns 'False' if the bounds specified are considered invalid.
 	Method GetArray:Bool(Index:UInt, Output:ValueType[], Count:UInt, OutputOffset:UInt=0)
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
@@ -93,7 +154,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Local Address:= OffsetIndexToAddress(Index)
 		
 		While (Address < ByteBounds)
-			Output[OutputPosition] = GetRaw(Address)
+			Output[OutputPosition] = GetRaw_Unsafe(Address)
 			
 			OutputPosition += 1
 			
@@ -114,6 +175,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return Output
 	End
 	
+	' This returns 'False' if the bounds specified are considered invalid.
 	Method SetArray:Bool(Index:UInt, Input:ValueType[], Count:UInt, InputOffset:UInt=0)
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
@@ -127,7 +189,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Local Stride:= ElementSize
 		
 		While (Address < ByteBounds)
-			SetRaw(Address, Input[InputPosition])
+			SetRaw_Unsafe(Address, Input[InputPosition])
 			
 			InputPosition += 1
 			
@@ -147,6 +209,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return SetArray(0, Input)
 	End
 	
+	' This returns 'False' if the bounds specified are considered invalid.
 	Method Clear:Bool(Index:UInt, Count:UInt)
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
@@ -191,7 +254,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	' This converts an index to a raw address for use with the internal buffer.
 	Method IndexToAddress:UInt(Index:UInt)
-		#If REGAL_UTIL_BUFFERS_BYTE_OPTIMIZATIONS
+		#If REGAL_UTIL_BUFFERVIEW_BYTE_OPTIMIZATIONS
 			If (ElementSize = 1) Then
 				Return Index
 			Endif
@@ -202,7 +265,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	' This converts a raw address to an index.
 	Method AddressToIndex:UInt(Address:UInt)
-		#If REGAL_UTIL_BUFFERS_BYTE_OPTIMIZATIONS
+		#If REGAL_UTIL_BUFFERVIEW_BYTE_OPTIMIZATIONS
 			If (ElementSize = 1) Then
 				Return Address
 			Endif
@@ -246,11 +309,33 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	' These two methods operate on raw addresses.
 	' This means the input should not be an index,
 	' nor should it be a non-offset address.
-	' The i
-	Method GetRaw:ValueType(Address:UInt) Abstract
-	Method SetRaw:Void(Address:UInt, Value:ValueType) Abstract
+	' Implementations should not bother with out-of-bounds checks.
+	Method GetRaw_Unsafe:ValueType(RawAddress:UInt) Abstract
+	Method SetRaw_Unsafe:Void(RawAddress:UInt, Value:ValueType) Abstract
 	
 	' Implemented:
+	Method SetRaw:Void(Address:UInt, Value:ValueType) Final
+		Local ElementSize:= Self.ElementSize
+		
+		If ((Address + ElementSize) > Size) Then
+			Throw New InvalidViewWriteOperation(Self, Address, ElementSize)
+		Endif
+		
+		SetRaw_Unsafe(Address, Value)
+		
+		Return
+	End
+	
+	Method GetRaw:ValueType(Address:UInt) Final
+		Local ElementSize:= Self.ElementSize
+		
+		If ((Address + ElementSize) > Size) Then
+			Throw New InvalidViewReadOperation(Self, Address, ElementSize)
+		Endif
+		
+		Return GetRaw_Unsafe(Address)
+	End
+	
 	Method ClearRaw:Void(Address:UInt)
 		SetRaw(Address, NIL)
 		
@@ -263,7 +348,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	' This provides the number of elements in this view.
 	Method Length:UInt() Property
-		#If REGAL_UTIL_BUFFERS_BYTE_OPTIMIZATIONS
+		#If REGAL_UTIL_BUFFERVIEW_BYTE_OPTIMIZATIONS
 			If (ElementSize = 1) Then
 				Return Size
 			Endif
@@ -272,8 +357,13 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return (Size / ElementSize)
 	End
 	
-	' This provides the raw size of the internal buffer (In bytes).
+	' This provides the raw size of the internal buffer (In bytes), offset by the internal view-location.
 	Method Size:UInt() Property
+		Return (RawSize - Offset)
+	End
+	
+	' This returns the raw size of the internal buffer (In bytes), without adjusting for offsets.
+	Method RawSize:UInt() Property ' Int
 		Return UInt(Data.Length)
 	End
 	
@@ -282,7 +372,8 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return Self._ElementSize
 	End
 	
-	' This provides access to the internal buffer offset.
+	' This provides access to the internal buffer-offset.
+	' Note: This is already accounted for when calculating 'Size'.
 	Method Offset:UInt() Property ' Int
 		Return Self._Offset
 	End
@@ -290,7 +381,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method Offset:Void(Value:UInt) Property
 		Self._Offset = Value
 		
-		#If REGAL_UTIL_BUFFERS_SAFE
+		#If REGAL_UTIL_BUFFERVIEW_SAFE
 			' Nothing so far.
 		#End
 		
@@ -302,14 +393,20 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return Self._Data
 	End
 	
+	' Properties (Protected):
+	Protected
+	
+	Method RawSize:Void(Value:UInt) Property
+		Self._RawSize = Value
+		
+		Return
+	End
+	
 	Method Data:Void(Value:DataBuffer) Property
 		Self._Data = Value
 		
 		Return
 	End
-	
-	' Properties (Protected):
-	Protected
 	
 	Method ElementSize:Void(Value:UInt) Property
 		Self._ElementSize = Value
@@ -324,6 +421,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	Field _ElementSize:UInt ' Int
 	Field _Offset:UInt ' Int
+	Field _RawSize:UInt ' Int
 	Field _Data:DataBuffer
 	
 	Public
@@ -332,16 +430,16 @@ End
 ' This is an intermediate class which defines mathematical routines for both integral and floating-point types.
 Class MathArrayView<ValueType> Extends ArrayView<ValueType> Abstract
 	' Constructor(s):
-	Method New(ElementSize:UInt, Count:UInt, __Direct:Bool=False)
-		Super.New(ElementSize, Count, __Direct)
+	Method New(ElementSize:UInt, ElementCount:UInt, __Direct:Bool=False)
+		Super.New(ElementSize, ElementCount, __Direct)
 	End
 	
-	Method New(ElementSize:UInt, Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(ElementSize, Data, OffsetInBytes)
+	Method New(ElementSize:UInt, Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(ElementSize, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(ElementSize:UInt, View:BufferView, ExtraOffset:UInt=0)
-		Super.New(ElementSize, View, ExtraOffset)
+	Method New(ElementSize:UInt, View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(ElementSize, View, ElementCount, ExtraOffset)
 	End
 	
 	' Methods:
@@ -409,27 +507,27 @@ Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArra
 		Super.New(Type_Size, Count, __Direct)
 	End
 	
-	Method New(Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(Type_Size, Data, OffsetInBytes)
+	Method New(Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(Type_Size, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(View:BufferView, ExtraOffset:UInt=0)
-		Super.New(Type_Size, View, ExtraOffset)
+	Method New(View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(Type_Size, View, ElementCount, ExtraOffset)
 	End
 	
 	' Constructor(s) (Protected):
 	Protected
 	
-	Method New(Type_Size:UInt, Count:UInt, __Direct:Bool=False)
-		Super.New(Type_Size, Count, __Direct)
+	Method New(Type_Size:UInt, ElementCount:UInt, __Direct:Bool=False)
+		Super.New(Type_Size, ElementCount, __Direct)
 	End
 	
-	Method New(Type_Size:UInt, Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(Type_Size, Data, OffsetInBytes)
+	Method New(Type_Size:UInt, Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(Type_Size, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(Type_Size:UInt, View:BufferView, ExtraOffset:UInt=0)
-		Super.New(Type_Size, View, ExtraOffset)
+	Method New(Type_Size:UInt, View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(Type_Size, View, ElementCount, ExtraOffset)
 	End
 	
 	Public
@@ -448,11 +546,11 @@ Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArra
 	' Methods (Protected):
 	Protected
 	
-	Method GetRaw:Int(Address:UInt) ' Final
+	Method GetRaw_Unsafe:Int(Address:UInt) ' Final
 		Return Data.PeekInt(Address)
 	End
 	
-	Method SetRaw:Void(Address:UInt, Value:Int) ' Final
+	Method SetRaw_Unsafe:Void(Address:UInt, Value:Int) ' Final
 		Data.PokeInt(Address, Value)
 		
 		Return
@@ -470,27 +568,27 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 		Super.New(Type_Size, Count, __Direct)
 	End
 	
-	Method New(Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(Type_Size, Data, OffsetInBytes)
+	Method New(Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(Type_Size, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(View:BufferView, ExtraOffset:UInt=0)
-		Super.New(Type_Size, View, ExtraOffset)
+	Method New(View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(Type_Size, View, ElementCount, ExtraOffset)
 	End
 	
 	' Constructor(s) (Protected):
 	Protected
 	
-	Method New(Type_Size:UInt, Count:UInt, __Direct:Bool=False)
-		Super.New(Type_Size, Count, __Direct)
+	Method New(Type_Size:UInt, ElementCount:UInt, __Direct:Bool=False)
+		Super.New(Type_Size, ElementCount, __Direct)
 	End
 	
-	Method New(Type_Size:UInt, Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(Type_Size, Data, OffsetInBytes)
+	Method New(Type_Size:UInt, Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(Type_Size, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(Type_Size:UInt, View:BufferView, ExtraOffset:UInt=0)
-		Super.New(Type_Size, View, ExtraOffset)
+	Method New(Type_Size:UInt, View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(Type_Size, View, ElementCount, ExtraOffset)
 	End
 	
 	Public
@@ -509,11 +607,11 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 	' Methods (Protected):
 	Protected
 	
-	Method GetRaw:Int(Address:UInt) ' Final ' Short
+	Method GetRaw_Unsafe:Int(Address:UInt) ' Final ' Short
 		Return Data.PeekShort(Address)
 	End
 	
-	Method SetRaw:Void(Address:UInt, Value:Int) ' Final ' Short
+	Method SetRaw_Unsafe:Void(Address:UInt, Value:Int) ' Final ' Short
 		Data.PokeShort(Address, Value)
 		
 		Return
@@ -531,16 +629,16 @@ Class ByteArrayView Extends ShortArrayView ' ArrayView<Int> ' Byte
 		Super.New(Type_Size, Count, __Direct)
 	End
 	
-	Method New(Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(Type_Size, Data, OffsetInBytes)
+	Method New(Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(Type_Size, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(View:BufferView, ExtraOffset:UInt=0)
-		Super.New(Type_Size, View, ExtraOffset)
+	Method New(View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(Type_Size, View, ElementCount, ExtraOffset)
 	End
 	
 	' Methods (Public):
-	#If REGAL_UTIL_BUFFERS_BYTE_OPTIMIZATIONS
+	#If REGAL_UTIL_BUFFERVIEW_BYTE_OPTIMIZATIONS
 		' These two methods follow the integrity rules of 'Offset':
 		Method Get:Int(Address:UInt) ' Byte
 			Return GetRaw(Offset + Address)
@@ -576,11 +674,11 @@ Class ByteArrayView Extends ShortArrayView ' ArrayView<Int> ' Byte
 	' Methods (Protected):
 	Protected
 	
-	Method GetRaw:Int(Address:UInt) ' Final ' Byte
+	Method GetRaw_Unsafe:Int(Address:UInt) ' Final ' Byte
 		Return Data.PeekByte(Address)
 	End
 	
-	Method SetRaw:Void(Address:UInt, Value:Int) ' Final ' Byte
+	Method SetRaw_Unsafe:Void(Address:UInt, Value:Int) ' Final ' Byte
 		Data.PokeByte(Address, Value)
 		
 		Return
@@ -598,22 +696,22 @@ Class FloatArrayView Extends MathArrayView<Float> ' DoubleArrayView
 		Super.New(Type_Size, Count, __Direct)
 	End
 	
-	Method New(Data:DataBuffer, OffsetInBytes:UInt=0)
-		Super.New(Type_Size, Data, OffsetInBytes)
+	Method New(Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+		Super.New(Type_Size, Data, OffsetInBytes, ElementCount)
 	End
 	
-	Method New(View:BufferView, ExtraOffset:UInt=0)
-		Super.New(Type_Size, View, ExtraOffset)
+	Method New(View:BufferView, ElementCount:UInt=MAX_VIEW_ELEMENTS, ExtraOffset:UInt=0)
+		Super.New(Type_Size, View, ElementCount, ExtraOffset)
 	End
 	
 	' Methods (Protected):
 	Protected
 	
-	Method GetRaw:Float(Address:UInt) ' Final ' Double
+	Method GetRaw_Unsafe:Float(Address:UInt) ' Final ' Double
 		Return Data.PeekFloat(Address)
 	End
 	
-	Method SetRaw:Void(Address:UInt, Value:Float) ' Final ' Double
+	Method SetRaw_Unsafe:Void(Address:UInt, Value:Float) ' Final ' Double
 		Data.PokeFloat(Address, Value)
 		
 		Return
