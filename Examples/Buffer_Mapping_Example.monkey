@@ -11,7 +11,7 @@ Import regal.util.bufferview
 ' Functions:
 Function Main:Int()
 	' This specifies then number of elements we'll be allocating.
-	Local Count:= 5
+	Local Count:= 8
 	
 	' Allocate 'Count' 16-bit integers.
 	Local RawBuffer:= New DataBuffer(Count * SizeOf_Short)
@@ -20,7 +20,7 @@ Function Main:Int()
 	Local BaseView:= New ShortArrayView(RawBuffer)
 	
 	' Allocate a view of 16-bit integers starting 2 bytes (16-bits) from the beginning of 'RawBuffer'.
-	Local OffsetView:= New ShortArrayView(RawBuffer, (1 * SizeOf_Short), 3) ' (1 * 2)
+	Local OffsetView:= New ShortArrayView(RawBuffer, ((Count / 4) * SizeOf_Short), (Count / 2)) ' (1 * 2)
 	'New(Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
 	
 	For Local I:= 0 Until Count
