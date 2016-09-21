@@ -26,9 +26,22 @@ Function Main:Int()
 		BaseView.Set(I, (I + 1)) ' 1, 2, 3, ...
 	Next
 	
+	Print("The length of 'BaseView' is: " + BaseView.Length)
+	Print("The length of 'OffsetView' is: " + OffsetView.Length)
+	Print("")
 	Print("The first entry of 'BaseView' is: " + BaseView.Get(0))
 	Print("The first entry of 'OffsetView' is: " + OffsetView.Get(0))
 	Print("The second entry of 'BaseView' is: " + BaseView.Get(1))
+	Print("")
+	Print("Clearing 'OffsetView'...")
+	
+	OffsetView.Clear()
+	
+	Print("Printing the contents of 'BaseView':")
+	
+	For Local I:= 0 Until BaseView.Length
+		Print("[" + I + "]: " + BaseView.Get(I))
+	Next
 	
 	Return 0
 End
