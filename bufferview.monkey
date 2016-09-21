@@ -79,7 +79,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Self.ElementSize = ElementSize
 		Self.Data = Data
 		
-		Self.RawSize = GetRawSize(Data, ElementSize, ElementCount)
+		Self.Size = GetSize(Data, ElementSize, ElementCount)
 	End
 	
 	' The 'ExtraOffset' argument is used to offset from the 'View' object's offset.
@@ -90,13 +90,13 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		
 		Self.Data = View.Data
 		
-		Self.RawSize = GetRawSize(Self.Data, ElementSize, ElementCount)
+		Self.Size = GetSize(Self.Data, ElementSize, ElementCount)
 	End
 	
 	' Constructor(s) (Private):
 	Private
 	
-	Method GetRawSize:UInt(Data:DataBuffer, ElementSize:UInt, ElementCount:UInt=MAX_VIEW_ELEMENTS)
+	Method GetSize:UInt(Data:DataBuffer, ElementSize:UInt, ElementCount:UInt=MAX_VIEW_ELEMENTS)
 		If (ElementCount = MAX_VIEW_ELEMENTS) Then
 			Return Data.Length
 		Endif
@@ -123,7 +123,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Self.Data = New DataBuffer(IntendedSize, __Direct) ' CountInBytes(ElementCount)
 		
 		Self.Offset = 0
-		Self.RawSize = Self.Data.Length
+		Self.Size = Self.Data.Length
 	End
 	
 	Public
@@ -147,7 +147,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
 		' Make sure the end-point fits within our buffer-segment.
-		If (ByteBounds > RawSize) Then
+		If (ByteBounds > Size) Then
 			Return False
 		Endif
 		
@@ -189,7 +189,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
 		' Make sure the end-point fits within our buffer-segment.
-		If (ByteBounds > RawSize) Then
+		If (ByteBounds > Size) Then
 			Return False
 		Endif
 		
@@ -233,7 +233,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
 		' Make sure the end-point fits within our buffer-segment.
-		If (ByteBounds > RawSize) Then
+		If (ByteBounds > ViewBounds) Then
 			Return False
 		Endif
 		
@@ -343,7 +343,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method SetRaw:Void(Address:UInt, Value:ValueType) Final
 		Local ElementSize:= Self.ElementSize
 		
-		If ((Address + ElementSize) > RawSize) Then
+		If ((Address + ElementSize) > ViewBounds) Then
 			Throw New InvalidViewWriteOperation(Self, Address, ElementSize)
 		Endif
 		
@@ -355,7 +355,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method GetRaw:ValueType(Address:UInt) Final
 		Local ElementSize:= Self.ElementSize
 		
-		If ((Address + ElementSize) > RawSize) Then
+		If ((Address + ElementSize) > ViewBounds) Then
 			Throw New InvalidViewReadOperation(Self, Address, ElementSize)
 		Endif
 		
@@ -383,16 +383,17 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return (Size / ElementSize)
 	End
 	
-	' This provides the raw size of the internal buffer (In bytes), offset by the internal view-location.
-	Method Size:UInt() Property
-		Return (RawSize - Offset)
-	End
-	
-	' This returns the raw size of the internal buffer (In bytes), without adjusting for offsets.
+	' This describes the address of the absolute furthest into the internal buffer this view reaches.
 	' This is mainly useful for raw bounds checks that already account for offsets.
 	' For a good example of this, view the 'GetArray' command's implementation(s).
-	Method RawSize:UInt() Property ' Int
-		Return UInt(Data.Length)
+	Method ViewBounds:UInt() Property
+		Return (Size + Offset)
+	End
+	
+	' This returns the raw size of the internal buffer area (In bytes), without adjusting for offsets.
+	' This is useful when the literal size (In bytes) of this view is required.
+	Method Size:UInt() Property ' Int
+		Return Self._Size ' UInt(Data.Length)
 	End
 	
 	' This specifies the size of an element.
@@ -424,8 +425,8 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	' Properties (Protected):
 	Protected
 	
-	Method RawSize:Void(Value:UInt) Property
-		Self._RawSize = Value
+	Method Size:Void(Value:UInt) Property
+		Self._Size = Value
 		
 		Return
 	End
@@ -449,7 +450,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	Field _ElementSize:UInt ' Int
 	Field _Offset:UInt ' Int
-	Field _RawSize:UInt ' Int
+	Field _Size:UInt ' Int
 	Field _Data:DataBuffer
 	
 	Public
