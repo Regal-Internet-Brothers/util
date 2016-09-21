@@ -143,21 +143,29 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	' This returns 'False' if the bounds specified are considered invalid.
 	Method GetArray:Bool(Index:UInt, Output:ValueType[], Count:UInt, OutputOffset:UInt=0)
+		' Calculate the end-point we'll be reaching.
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
-		If (ByteBounds > Size) Then
+		' Make sure the end-point fits within our buffer-segment.
+		If (ByteBounds > RawSize) Then
 			Return False
 		Endif
 		
+		' This will be used to store our current write-location in 'Output'.
 		Local OutputPosition:= OutputOffset
 		
+		' The current raw address in the internal buffer.
 		Local Address:= OffsetIndexToAddress(Index)
 		
+		' Continue until we've reached our described bounds.
 		While (Address < ByteBounds)
+			' Copy the value located at 'Address' into the output.
 			Output[OutputPosition] = GetRaw_Unsafe(Address)
 			
+			' Move to the next target-location for the output-data.
 			OutputPosition += 1
 			
+			' Move forward by one entry.
 			Address += ElementSize
 		Wend
 		
@@ -177,22 +185,32 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	' This returns 'False' if the bounds specified are considered invalid.
 	Method SetArray:Bool(Index:UInt, Input:ValueType[], Count:UInt, InputOffset:UInt=0)
+		' Calculate the end-point we'll be reaching.
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
-		If (ByteBounds > Size) Then
+		' Make sure the end-point fits within our buffer-segment.
+		If (ByteBounds > RawSize) Then
 			Return False
 		Endif
 		
+		' This will store our current position in the 'Input' array.
 		Local InputPosition:= InputOffset
 		
+		' The current raw address in the internal buffer.
 		Local Address:= OffsetIndexToAddress(Index)
+		
+		' The amount 'Address' will move by on each iteration.
 		Local Stride:= ElementSize
 		
+		' Continue until we've reached our described bounds.
 		While (Address < ByteBounds)
+			' Write a value at the current address using an entry from the input-data.
 			SetRaw_Unsafe(Address, Input[InputPosition])
 			
+			' Move to the next entry in the input-data.
 			InputPosition += 1
 			
+			' Move forward by one entry.
 			Address += Stride
 		Wend
 		
@@ -211,18 +229,26 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	
 	' This returns 'False' if the bounds specified are considered invalid.
 	Method Clear:Bool(Index:UInt, Count:UInt)
+		' Calculate the end-point we'll be reaching.
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
-		If (ByteBounds > Size) Then
+		' Make sure the end-point fits within our buffer-segment.
+		If (ByteBounds > RawSize) Then
 			Return False
 		Endif
 		
+		' The current raw address in the internal buffer.
 		Local Address:= OffsetIndexToAddress(Index)
+		
+		' The amount 'Address' will move by on each iteration.
 		Local Stride:= ElementSize
 		
+		' Continue until we've reached our described bounds.
 		While (Address < ByteBounds)
+			' Clear an entry at our current location in the buffer.
 			ClearRaw(Address)
 			
+			' Move forward by one entry.
 			Address += Stride
 		Wend
 		
@@ -317,7 +343,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method SetRaw:Void(Address:UInt, Value:ValueType) Final
 		Local ElementSize:= Self.ElementSize
 		
-		If ((Address + ElementSize) > Size) Then
+		If ((Address + ElementSize) > RawSize) Then
 			Throw New InvalidViewWriteOperation(Self, Address, ElementSize)
 		Endif
 		
@@ -329,7 +355,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method GetRaw:ValueType(Address:UInt) Final
 		Local ElementSize:= Self.ElementSize
 		
-		If ((Address + ElementSize) > Size) Then
+		If ((Address + ElementSize) > RawSize) Then
 			Throw New InvalidViewReadOperation(Self, Address, ElementSize)
 		Endif
 		
@@ -363,6 +389,8 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	End
 	
 	' This returns the raw size of the internal buffer (In bytes), without adjusting for offsets.
+	' This is mainly useful for raw bounds checks that already account for offsets.
+	' For a good example of this, view the 'GetArray' command's implementation(s).
 	Method RawSize:UInt() Property ' Int
 		Return UInt(Data.Length)
 	End
