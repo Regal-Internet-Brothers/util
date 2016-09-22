@@ -228,7 +228,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	End
 	
 	' This returns 'False' if the bounds specified are considered invalid.
-	Method Clear:Bool(Index:UInt, Count:UInt)
+	Method Clear:Bool(Index:UInt, Count:UInt, Value:ValueType)
 		' Calculate the end-point we'll be reaching.
 		Local ByteBounds:= OffsetIndexToAddress(Index+Count)
 		
@@ -246,7 +246,7 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		' Continue until we've reached our described bounds.
 		While (Address < ByteBounds)
 			' Clear an entry at our current location in the buffer.
-			ClearRaw(Address)
+			SetRaw(Address, Value)
 			
 			' Move forward by one entry.
 			Address += Stride
@@ -256,9 +256,19 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return True
 	End
 	
+	' This calls 'Clear' using the value of 'NIL'.
+	Method Clear:Bool(Index:UInt, Count:UInt)
+		Return Clear(Index, Count, NIL)
+	End
+	
+	' This clears the entire view using the value specified.
+	Method Clear:Bool(Value:ValueType)
+		Return Clear(0, Length, Value)
+	End
+	
 	' TODO: Optimize this overload to bypass either index conversion or standard assignment.
 	Method Clear:Bool()
-		Return Clear(0, Length)
+		Return Clear(NIL)
 	End
 	
 	Method Add:ValueType(Index:UInt, Value:ValueType)
@@ -360,12 +370,6 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Endif
 		
 		Return GetRaw_Unsafe(Address)
-	End
-	
-	Method ClearRaw:Void(Address:UInt)
-		SetRaw(Address, NIL)
-		
-		Return
 	End
 	
 	Public
