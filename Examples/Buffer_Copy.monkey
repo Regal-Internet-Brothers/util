@@ -16,7 +16,7 @@ Function Main:Int()
 		Source.Set(I, (I * I))
 	Next
 	
-	ArrayViewOperation<IntArrayView, ByteArrayView>.Copy(Source, 0, Destination, 0, Destination.Length)
+	Destination.Copy(Source)
 	
 	Print("Source:")
 	ReportView(Source)

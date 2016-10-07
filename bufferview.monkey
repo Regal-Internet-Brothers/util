@@ -159,10 +159,24 @@ Class ArrayView<ValueType> Implements ElementView Abstract ' BufferView
 		Return
 	End
 	
-	' This performs a raw memory transfer from this view to 'Output'.
+	' This performs a raw memory transfer/copy from this view to 'Output'.
 	' This means the output is not casted, but rather a mapped copy of the data.
 	Method Transfer:Bool(InputIndex:UInt, Output:ElementView, OutputIndex:Int, Count:UInt) ' ArrayView
 		Return ArrayViewOperation<ArrayView, ElementView>.Transfer(Self, InputIndex, Output, OutputIndex, Count) ' ArrayView<ValueType>
+	End
+	
+	' This performs an element-level transfer/copy from 'Input' to this view.
+	' This means that each element is casted from their source type/size to the destination type/size.
+	Method Copy:Bool(Index:UInt, Input:ArrayView, InputIndex:Int, Count:UInt) ' ArrayView<ValueType>
+		Return ArrayViewOperation<ArrayView, ArrayView>.Copy(Input, InputIndex, Self, Index, Count) ' ArrayView<ValueType>
+	End
+	
+	Method Copy:Bool(Index:UInt, Input:ArrayView, InputIndex:Int=0)
+		Return Copy(Index, Input, InputIndex, Min(Self.Length, Input.Length))
+	End
+	
+	Method Copy:Bool(Input:ArrayView)
+		Return Copy(0, Input, 0)
 	End
 	
 	' This returns 'False' if the bounds specified are considered invalid.
