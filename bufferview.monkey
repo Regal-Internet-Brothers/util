@@ -45,8 +45,26 @@ Interface BufferView
 	Method Offset:UInt() Property ' Int
 End
 
+Interface ElementView Extends BufferView
+	' Methods:
+	
+	' This converts 'Index' into a "raw address";
+	' used for internal memory operations.
+	' For details, view the 'ArrayView.OffsetIndexToAddress' command.
+	Method IndexToRawAddress:UInt(Index:UInt)
+	
+	' Properties:
+	
+	' This supplies the raw size of this view.
+	' For details, view the 'ArrayView.Size' property.
+	Method Size:UInt() Property ' Int
+	
+	' This specifies the size of each element in this view.
+	Method ElementSize:UInt() Property ' Int
+End
+
 ' Classes:
-Class ArrayView<ValueType> Implements BufferView Abstract
+Class ArrayView<ValueType> Implements ElementView Abstract ' BufferView
 	' Constant variable(s) (Public):
 	Const MAX_VIEW_ELEMENTS:= BufferView.MAX_VIEW_ELEMENTS
 	
@@ -141,6 +159,12 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Return
 	End
 	
+	' This performs a raw memory transfer from this view to 'Output'.
+	' This means the output is not casted, but rather a mapped copy of the data.
+	Method Transfer:Bool(InputIndex:UInt, Output:ElementView, OutputIndex:Int, Count:UInt) ' ArrayView
+		Return ArrayViewOperation<ArrayView, ElementView>.Transfer(Self, InputIndex, Output, OutputIndex, Count) ' ArrayView<ValueType>
+	End
+	
 	' This returns 'False' if the bounds specified are considered invalid.
 	Method GetArray:Bool(Index:UInt, Output:ValueType[], Count:UInt, OutputOffset:UInt=0)
 		' Calculate the end-point we'll be reaching.
@@ -181,6 +205,10 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 		Endif
 		
 		Return Output
+	End
+	
+	Method GetArray:ValueType[]()
+		Return GetArray(0, Length)
 	End
 	
 	' This returns 'False' if the bounds specified are considered invalid.
@@ -350,6 +378,12 @@ Class ArrayView<ValueType> Implements BufferView Abstract
 	Method SetRaw_Unsafe:Void(RawAddress:UInt, Value:ValueType) Abstract
 	
 	' Implemented:
+	
+	' This method wraps 'OffsetIndexToAddress' for compatibility with the 'ElementView' interface.
+	Method IndexToRawAddress:UInt(Index:UInt) Final
+		Return OffsetIndexToAddress(Index)
+	End
+	
 	Method SetRaw:Void(Address:UInt, Value:ValueType) Final
 		Local ElementSize:= Self.ElementSize
 		
@@ -751,4 +785,57 @@ Class FloatArrayView Extends MathArrayView<Float> ' DoubleArrayView
 	End
 	
 	Public
+End
+
+' This class contains generic utilities for 'ArrayView' objects.
+Class ArrayViewOperation<A, B> Abstract
+	#Rem
+		This performs a raw memory copy from one view to another.
+		
+		Address translations are performed before copy-operations
+		take place, and are checked accordingly.
+		
+		The 'Count' argument specifies the number of elements to be copied from 'Input'.
+		
+		If preliminary bounds checks fail, this command will return 'False'.
+	#End
+	
+	Function Transfer:Bool(Input:A, InputIndex:UInt, Output:B, OutputIndex:Int, Count:UInt) ' ArrayView ' ElementView
+		' Calculate the appropriate element size.
+		Local ElementSize:= Input.ElementSize ' Min(Input.ElementSize, Output.ElementSize)
+		Local BytesToTransfer:= (ElementSize * Count)
+		
+		' Calculate the end-points we'll be reaching:
+		Local InByteBounds:= Input.IndexToRawAddress(InputIndex + Count)
+		Local OutByteBounds:= Output.IndexToRawAddress(OutputIndex) + BytesToTransfer ' Output.IndexToRawAddress(OutputIndex + Count)
+		
+		' Make sure the end-point fits within our buffer segments:
+		If (InByteBounds > Input.Size Or OutByteBounds > Output.Size) Then
+			Return False
+		Endif
+		
+		' The starting raw address in the output buffer.
+		Local OutputAddress:= Output.IndexToRawAddress(OutputIndex)
+		
+		' The starting raw address in the input buffer.
+		Local InputAddress:= Input.IndexToRawAddress(InputIndex)
+		
+		Input.Data.CopyBytes(InputAddress, Output.Data, OutputAddress, BytesToTransfer)
+		
+		' Return the default response.
+		Return True
+	End
+	
+	' Constructor(s) (Private):
+	Private
+	
+	Method New() ' Final
+		' This constructor is reserved.
+	End
+	
+	Public
+End
+
+Class ElementViewOperation Extends ArrayViewOperation<ElementView, ElementView>
+	' Nothing so far.
 End

@@ -27,7 +27,6 @@ Function Main:Int()
 	
 	' Create a view of 16-bit integers starting 'OffsetIndex' 16-bit integers from the beginning of 'RawBuffer'. (Converted to bytes from indices)
 	Local OffsetView:= New ShortArrayView(RawBuffer, BaseView.IndexToAddress(OffsetIndex), (Count / 2)) ' (OffsetIndex * 2)
-	'New(Data:DataBuffer, OffsetInBytes:UInt=0, ElementCount:UInt=MAX_VIEW_ELEMENTS)
 	
 	For Local I:= 0 Until Count
 		BaseView.Set(I, (I + 1)) ' 1, 2, 3, ...
