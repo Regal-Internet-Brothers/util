@@ -801,7 +801,7 @@ Class ArrayViewOperation<A, B> Abstract
 	#End
 	
 	Function Transfer:Bool(Input:A, InputIndex:UInt, Output:B, OutputIndex:Int, Count:UInt) ' ArrayView ' ElementView
-		' Calculate the appropriate element size.
+		' Get the appropriate element size.
 		Local ElementSize:= Input.ElementSize ' Min(Input.ElementSize, Output.ElementSize)
 		Local BytesToTransfer:= (ElementSize * Count)
 		
@@ -821,6 +821,48 @@ Class ArrayViewOperation<A, B> Abstract
 		Local InputAddress:= Input.IndexToRawAddress(InputIndex)
 		
 		Input.Data.CopyBytes(InputAddress, Output.Data, OutputAddress, BytesToTransfer)
+		
+		' Return the default response.
+		Return True
+	End
+	
+	' This performs an element-level copy from one view to another.
+	' If preliminary bounds checks fail, this command will return 'False'.
+	Function Copy:Bool(Input:A, InputIndex:UInt, Output:B, OutputIndex:Int, Count:UInt) ' ArrayView ' ElementView
+		' Calculate the appropriate element size.
+		Local InElementSize:= Input.ElementSize
+		Local OutElementSize:= Output.ElementSize
+		
+		' Calculate the end-points we'll be reaching:
+		Local InByteBounds:= Input.IndexToRawAddress(InputIndex + Count)
+		Local OutByteBounds:= Output.IndexToRawAddress(OutputIndex + Count)
+		
+		' Make sure the end-point fits within our buffer segments:
+		If (InByteBounds > Input.Size Or OutByteBounds > Output.Size) Then
+			Return False
+		Endif
+		
+		' The starting raw address in the output buffer.
+		Local OutputAddress:= Output.IndexToRawAddress(OutputIndex)
+		
+		' The starting raw address in the input buffer.
+		Local InputAddress:= Input.IndexToRawAddress(InputIndex)
+		
+		' Continue until we've reached our described bounds.
+		While (InputAddress < InByteBounds)
+			#If CONFIG = "debug"
+				If (OutputAddress >= OutByteBounds) Then
+					Exit
+				Endif
+			#End
+			
+			' Copy the value located at 'Address' into the output.
+			Output.SetRaw_Unsafe(OutputAddress, Input.GetRaw_Unsafe(InputAddress))
+			
+			' Move forward by one entry.
+			InputAddress += InElementSize
+			OutputAddress += OutElementSize
+		Wend
 		
 		' Return the default response.
 		Return True
