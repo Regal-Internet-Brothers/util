@@ -17,6 +17,12 @@ Public
 	'#REGAL_UTIL_BUFFERVIEW_SAFE = True
 '#End
 
+#If CONFIG = "debug"
+	'#REGAL_UTIL_BUFFERVIEW_STOP_ON_EXCEPTION = True
+#End
+
+'#REGAL_UTIL_BUFFERVIEW_NO_UNSIGNED = True
+
 ' Imports (Public):
 Import brl.databuffer
 
@@ -123,6 +129,10 @@ Class ArrayView<ValueType> Implements ElementView Abstract ' BufferView
 		
 		' Make sure the intended size is correct.
 		If (IntendedSize < ElementSize Or IntendedSize > Data.Length) Then
+			#If REGAL_UTIL_BUFFERVIEW_STOP_ON_EXCEPTION
+				DebugStop()
+			#End
+			
 			' The intended size is either too large, or too small.
 			Throw New InvalidViewMappingOperation(Self, Offset, IntendedSize)
 		Endif
@@ -133,6 +143,10 @@ Class ArrayView<ValueType> Implements ElementView Abstract ' BufferView
 	' NOTE: It is considered unsafe to call this constructor before assigning a value to the 'ElementSize' property.
 	Method InitializeCustomBuffer:Void(ElementSize:UInt, ElementCount:UInt, __Direct:Bool=False) Final
 		If (ElementSize = 0 Or ElementCount = 0) Then
+			#If REGAL_UTIL_BUFFERVIEW_STOP_ON_EXCEPTION
+				DebugStop()
+			#End
+			
 			Throw New BulkAllocationException<BufferView>(Self, 0) ' IntendedSize
 		Endif
 		
@@ -402,6 +416,10 @@ Class ArrayView<ValueType> Implements ElementView Abstract ' BufferView
 		Local ElementSize:= Self.ElementSize
 		
 		If ((Address + ElementSize) > ViewBounds) Then
+			#If REGAL_UTIL_BUFFERVIEW_STOP_ON_EXCEPTION
+				DebugStop()
+			#End
+			
 			Throw New InvalidViewWriteOperation(Self, Address, ElementSize)
 		Endif
 		
@@ -414,6 +432,10 @@ Class ArrayView<ValueType> Implements ElementView Abstract ' BufferView
 		Local ElementSize:= Self.ElementSize
 		
 		If ((Address + ElementSize) > ViewBounds) Then
+			#If REGAL_UTIL_BUFFERVIEW_STOP_ON_EXCEPTION
+				DebugStop()
+			#End
+			
 			Throw New InvalidViewReadOperation(Self, Address, ElementSize)
 		Endif
 		
@@ -615,7 +637,11 @@ Class IntArrayView Extends MathArrayView<Int> ' ArrayView<Long> ' Int ' LongArra
 	
 	' Methods (Public):
 	Method GetUnsigned:Int(Index:UInt)
-		Return (Get(Index) & $FFFFFFFF)
+		#If Not REGAL_UTIL_BUFFERVIEW_NO_UNSIGNED
+			Return (Get(Index) & $FFFFFFFF)
+		#Else
+			Return Get(Index)
+		#End
 	End
 	
 	Method SetUnsigned:Void(Index:UInt, Value:Int)
@@ -676,7 +702,11 @@ Class ShortArrayView Extends IntArrayView ' ArrayView<Int> ' Short
 	
 	' Methods (Public):
 	Method GetUnsigned:Int(Index:UInt) ' Short
-		Return (Get(Index) & $FFFF)
+		#If Not REGAL_UTIL_BUFFERVIEW_NO_UNSIGNED
+			Return (Get(Index) & $FFFF)
+		#Else
+			Return Get(Index)
+		#End
 	End
 	
 	Method SetUnsigned:Void(Index:UInt, Value:Int) ' Short
@@ -743,7 +773,11 @@ Class ByteArrayView Extends ShortArrayView ' ArrayView<Int> ' Byte
 	#End
 	
 	Method GetUnsigned:Int(Address:UInt) ' Byte
-		Return (Get(Address) & $FF)
+		#If Not REGAL_UTIL_BUFFERVIEW_NO_UNSIGNED
+			Return (Get(Address) & $FF)
+		#Else
+			Return Get(Address)
+		#End
 	End
 	
 	Method SetUnsigned:Void(Index:UInt, Value:Int) ' Byte
