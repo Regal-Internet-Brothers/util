@@ -823,7 +823,7 @@ Class ArrayViewOperation<A, B> Abstract
 		Local InByteBounds:= Input.IndexToRawAddress(InputIndex + Count)
 		Local OutByteBounds:= Output.IndexToRawAddress(OutputIndex) + BytesToTransfer ' Output.IndexToRawAddress(OutputIndex + Count)
 		
-		' Make sure the end-point fits within our buffer segments:
+		' Make sure the end-points fit within our buffer segments:
 		If (InByteBounds > Input.Size Or OutByteBounds > Output.Size) Then
 			Return False
 		Endif
@@ -834,6 +834,7 @@ Class ArrayViewOperation<A, B> Abstract
 		' The starting raw address in the input buffer.
 		Local InputAddress:= Input.IndexToRawAddress(InputIndex)
 		
+		' Perform a raw memory copy from 'Input.Data' to 'Output.Data'.
 		Input.Data.CopyBytes(InputAddress, Output.Data, OutputAddress, BytesToTransfer)
 		
 		' Return the default response.
@@ -851,7 +852,7 @@ Class ArrayViewOperation<A, B> Abstract
 		Local InByteBounds:= Input.IndexToRawAddress(InputIndex + Count)
 		Local OutByteBounds:= Output.IndexToRawAddress(OutputIndex + Count)
 		
-		' Make sure the end-point fits within our buffer segments:
+		' Make sure the end-points fit within our buffer segments:
 		If (InByteBounds > Input.Size Or OutByteBounds > Output.Size) Then
 			Return False
 		Endif
@@ -862,7 +863,7 @@ Class ArrayViewOperation<A, B> Abstract
 		' The starting raw address in the input buffer.
 		Local InputAddress:= Input.IndexToRawAddress(InputIndex)
 		
-		' Continue until we've reached our described bounds.
+		' Continue until we've reached our described bounds:
 		While (InputAddress < InByteBounds)
 			#If CONFIG = "debug"
 				If (OutputAddress >= OutByteBounds) Then
@@ -870,10 +871,10 @@ Class ArrayViewOperation<A, B> Abstract
 				Endif
 			#End
 			
-			' Copy the value located at 'Address' into the output.
+			' Copy the value located at 'InputAddress' into the output at 'OutputAddress'.
 			Output.SetRaw_Unsafe(OutputAddress, Input.GetRaw_Unsafe(InputAddress))
 			
-			' Move forward by one entry.
+			' Move forward by one entry on each address:
 			InputAddress += InElementSize
 			OutputAddress += OutElementSize
 		Wend
